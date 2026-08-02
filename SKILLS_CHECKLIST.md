@@ -18,6 +18,18 @@
 - [TipTap](https://tiptap.dev/docs)
 - [@dnd-kit](https://docs.dndkit.com/)
 
+| 链接 | 一句话 | 类似 Vue 侧 |
+|------|--------|-------------|
+| React | UI 框架本体 | Vue 3 |
+| React Router | 页面路由 | Vue Router |
+| Zustand | 全局客户端状态 | Pinia（更轻） |
+| TanStack Query | 服务端数据缓存/请求 | vue-query / 自研 request |
+| react-hook-form | 表单状态与校验 | ElForm + v-model 模式 |
+| Zod | 数据/schema 校验 | yup / 手写校验 |
+| Ant Design | UI 组件库 | Element Plus |
+| TipTap | 富文本编辑器 | wangeditor / Quill |
+| @dnd-kit | 拖拽排序 | vuedraggable |
+
 ---
 
 ## 1. 怎么用（掌握度）
