@@ -51,7 +51,7 @@
 
 | 能力 | React 侧差异 |
 |------|----------------|
-| TypeScript | 组件用 `FC` / 显式 props 类型；事件是 `React.ChangeEvent` 等 |
+| TypeScript | 组件用显式 props 类型即可，不强制 `React.FC`；事件是 `React.ChangeEvent` 等 |
 | Vite `proxy` / `.env` | 一样；别名、端口改成 5174 即可 |
 | axios 拦截器 | 逻辑可原样迁；**拦截器里不要调 React hooks** |
 | CRUD 后台模式 | 表格 + 筛选 + 弹窗；UI 换 Ant Design |

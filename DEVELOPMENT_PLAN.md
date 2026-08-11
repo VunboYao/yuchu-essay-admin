@@ -41,7 +41,7 @@
 
 | Vue | React |
 |-----|-------|
-| `.vue` SFC（template/script/style） | `.tsx` + CSS Modules / 全局 CSS |
+| `.vue` SFC（template/script/style） | `.tsx` + CSS Modules / 全局 CSS（`src/styles/` 放 design token / CSS 变量；不默认上 Tailwind） |
 | `ref` / `reactive` | `useState` / `useReducer` |
 | `computed` | `useMemo`（或派生变量） |
 | `watch` | `useEffect`（慎用，优先事件驱动） |
