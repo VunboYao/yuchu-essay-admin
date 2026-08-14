@@ -1,33 +1,22 @@
-# course-admin-react · React 后台管理端（练手）
+# course-admin-react · React 后台管理端
 
-用 **Vite + React 19 + TypeScript + Ant Design** 复刻 [`Admin/`](../Admin/)（Vue 3）全部功能，对接同一套 `course_server` `/admin/api/v1`。
+用 **Vite + React 19 + TypeScript + Ant Design** 复刻 [`Admin/`](../Admin/)（Vue 3）的业务能力，对接同一套 `course_server` `/admin/api/v1`。
 
-## 从这里开始
+文档已按阅读顺序放在 [`docs/`](./docs/README.md)，脚手架不要覆盖该目录。
 
-| 文档 | 用途 |
-|------|------|
-| **[技术栈提升 · 整体学习计划](../prd/005-技术栈提升-整体学习计划.md)** | 五阶段总路线（P1–P5），本目录对应 **P1** |
-| **[SKILLS_CHECKLIST.md](./SKILLS_CHECKLIST.md)** | 技术要求与掌握度自查（学什么 / 会不会） |
-| **[DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md)** | 分步开发计划与验收清单（怎么做 / 做到哪算过） |
-| **[ACCEPTANCE_LOG.md](./ACCEPTANCE_LOG.md)** | 分步验收记录 |
+## 阅读顺序
 
-建议顺序：先看总计划定位 P1 → 用技能自查标出 L0/L1 缺口并补到 L2 → 再按开发计划从 Step 0 开干。
+1. [01 工程契约](./docs/01-工程契约.md) — 质量硬契约（冲突时赢）
+2. [02 技能自查](./docs/02-技能自查.md) — 开干前标掌握度
+3. [03 开发计划](./docs/03-开发计划.md) — 从 Step 0 搭建
+4. [04 验收记录](./docs/04-验收记录.md) — 每步勾选
+5. [Zod 与 Vitest](./docs/learn-vitest-zod.md) — 对照本项目，不是契约
 
-## 怎么推进
-
-1. 打开 `SKILLS_CHECKLIST.md`，填掌握度，按 Step 前置补学。
-2. 打开 `DEVELOPMENT_PLAN.md`，从 **Step 0** 开始实现。
-3. 每步先对照 Vue 版 [`Admin/`](../Admin/) 对应文件，再自己写 React。
-4. 自测勾选该步验收项后，按文档「分步验收协议」发我检查。
-5. 验收记录写入 [ACCEPTANCE_LOG.md](./ACCEPTANCE_LOG.md)。
+总路线：[`prd/005`](../prd/005-技术栈提升-整体学习计划.md)（本目录 = P1）。
 
 ## 约定
 
-- 本目录用于练手；**默认你写业务代码**，AI 做审查与纠偏。
-- Vue 版 `Admin/` **不要改**，作左右对照。
-- 开发端口规划：**5174**（Vue Admin 仍为 5173）。
-- 默认管理员：`admin / admin123`（需先启动 `course_server`）。
-
-## 当前状态
-
-脚手架尚未创建。请按 `DEVELOPMENT_PLAN.md` 的 Step 1 自行初始化项目。
+- Vue 版 `Admin/` 不要改；只对路由 / API 字段 / 业务规则。
+- 开发端口 **5174**；账号 `admin / admin123`（需先启动 `course_server`）。
+- 质量门：`pnpm verify`（lint + type-check；test 暂缓）红灯 = 该 Step 未完成。
+- 代码落在 `src/app/` `src/shared/` `src/features/<域>/`。
