@@ -4,6 +4,12 @@
 > 它是一份任务引导，不提供可以整段复制的最终实现。请先自己完成每个检查点，卡住后再展开提示。  
 > 质量要求以 [01-工程契约](./01-工程契约.md) 为准。
 
+## 测试暂缓（2026-08-23）
+
+本步 **跳过** 检查点 0（测试基线）和检查点 7（路由行为测试）。  
+Vitest / RTL 延后到全部业务开发完成后统一接入（见 [03-开发计划](./03-开发计划.md) Step 16）。  
+原文保留，供以后接入时对照。本步从 **检查点 1** 开始；验收以「手动验证矩阵」+ `pnpm verify`（lint + type-check）为准。
+
 ## 1. 本步目标
 
 基于 Step 2 已完成的路由和 Layout，实现完整的客户端登录态闭环：
@@ -34,8 +40,7 @@
 - 持久化 key 为 `admin_token`，组件中不散落 `localStorage.setItem`。
 - 登录表单只使用 Zod + RHF 管状态和校验。
 - 提交期间按钮不可重复触发。
-- 至少有一条行为测试覆盖“未登录访问受保护路由”。
-- `pnpm verify` 通过。
+- `pnpm verify` 通过（lint + type-check；本步不要求 Vitest）。
 
 ## 2. 本步边界
 
@@ -85,18 +90,9 @@ src/
 │       ├── pages/
 │       │   ├── LoginPage.tsx
 │       │   └── LoginPage.module.css
-│       └── __tests__/
-│           └── auth-routing.test.tsx
-└── test/
-    └── setup.ts
 ```
 
-测试基线尚未接入时，还会修改：
-
-- `package.json`
-- `vite.config.ts`
-- `src/shared/config/env.ts`
-- 新增 `src/shared/config/env.test.ts`
+本步 **不要** 安装测试依赖，也不要改 `package.json` 的 `verify` / `vite.config.ts` 的 test 配置。`__tests__/` 与 `src/test/setup.ts` 延后到 Step 16。
 
 文件名可以小幅调整，但业务代码必须留在 `features/auth`，路由守卫必须留在应用壳 `app/router`。
 
@@ -109,10 +105,13 @@ src/
 3. 仍无法推进再看“提示二”。
 4. 完成后回答“自检问题”，不要只看页面能否点击。
 5. 每个检查点结束都运行最小验证，不要最后一次性排错。
+6. **跳过检查点 0 和检查点 7**（测试，已暂缓）。
 
 ---
 
 ## 检查点 0：先补齐测试基线
+
+> **暂缓（2026-08-23）**：跳过本检查点，直接做检查点 1。原文保留，供 Step 16 接入 Vitest 时使用。
 
 ### 当前问题
 
@@ -532,6 +531,8 @@ URLSearchParams 只负责读取字符串，不会替你判断它是否为本站�
 
 ## 检查点 7：写路由行为测试
 
+> **暂缓（2026-08-23）**：跳过本检查点。本步用「手动验证矩阵」代替 RTL。原文保留，供 Step 16 接入时使用。
+
 ### 测试目标
 
 契约要求验证用户可观察行为：
@@ -625,8 +626,8 @@ pnpm build
 
 - Oxlint 通过。
 - TypeScript 严格检查通过。
-- Vitest 全部通过。
 - Vite 生产构建完成。
+- （Vitest 延后到 Step 16，本步不要求 `pnpm test`。）
 
 ### 手动验证矩阵
 
@@ -714,7 +715,7 @@ pnpm build
 5. redirect 为什么必须保留 query/hash，又为什么必须做内部路径校验？
 6. Zod、RHF、resolver、Ant Design 各自负责什么？
 7. 为什么提交中状态用 `isSubmitting`，不另建 loading？
-8. 为什么路由测试应断言用户看到登录页，而不是测试 store 私有字段？
+8. （Step 16 再答）为什么路由测试应断言用户看到登录页，而不是测试 store 私有字段？
 9. Step 4 接真实接口时，哪些文件应替换，哪些文件不应重写？
 
 ## 7. 快速上手总结
@@ -731,14 +732,15 @@ pnpm build
 - RHF `useForm`：管理表单状态和提交状态。
 - RHF `Controller`：连接 Ant Design 受控输入。
 - `zodResolver`：把 Zod 错误映射为 RHF errors。
-- Testing Library：从用户行为验证路由守卫。
 
 ### 按需了解
+
+- Testing Library：从用户行为验证路由守卫（Step 16 统一接入，本步用手动矩阵代替）。
 
 - Zustand `migrate`：持久化结构上线并发生版本变化时再用。
 - Zustand `useShallow`：一次选择多个值且确实返回新对象时再用。
 - React Router loader：本项目禁止用它拉业务数据。
-- E2E：完整真实登录链路以后可以用 Playwright 验证，本步 RTL 已足够。
+- E2E：完整真实登录链路以后可以用 Playwright 验证；本步先用手动矩阵。
 
 ### 下一步
 
@@ -751,6 +753,6 @@ Step 3 验收通过后再进入 Step 4：
 
 ## 8. 未验证项
 
-- 本文没有替你实现 Step 3 源码，因此尚未执行登录行为测试。
-- 测试依赖安装需要可用的 npm registry 网络。
-- 完成实现后，请以 `pnpm verify`、`pnpm build` 和“手动验证矩阵”为最终验收依据。
+- 本文没有替你实现 Step 3 源码。
+- 检查点 0 / 7（Vitest 基线与路由行为测试）已暂缓，不在本步验收。
+- 完成实现后，请以 `pnpm verify`、`pnpm build` 和「手动验证矩阵」为最终验收依据。
