@@ -195,14 +195,70 @@ export default defineConfig({
 import '@testing-library/jest-dom/vitest'
 ```
 
+先写一个最小组件，确认组件测试环境确实可用。创建 `src/shared/ui/StatusBadge.tsx`：
+
+```tsx
+type Props = {
+  text: string
+}
+
+export function StatusBadge({ text }: Props) {
+  return <span role="status">{text}</span>
+}
+```
+
+创建 `src/shared/ui/StatusBadge.test.tsx`：
+
+```tsx
+import { render, screen } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
+import { StatusBadge } from './StatusBadge'
+
+describe('StatusBadge', () => {
+  it('显示传入的状态文本', () => {
+    render(<StatusBadge text="已启用" />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('已启用')
+  })
+})
+```
+
+运行：
+
+```bash
+pnpm test:run
+```
+
+测试通过说明三部分已经连通：
+
+- `environment: 'jsdom'` 提供 DOM 环境；
+- `render` 和 `screen` 负责渲染、查询组件；
+- `setup.ts` 自动注册 `toHaveTextContent` 等 DOM 匹配器，无需在每个测试文件重复导入。
+
 `jsdom` 是在 Node.js 进程里模拟的 DOM 环境。它适合组件交互测试，但不是完整浏览器，布局尺寸、真实导航、下载等能力仍应由 E2E 验证。
 
 ---
 
 ## 3. 测试文件的基本结构
 
+创建被测文件 `src/shared/utils/calculate-total.ts`：
+
+```ts
+export type CartItem = {
+  price: number
+  quantity: number
+}
+
+export function calculateTotal(items: CartItem[]) {
+  return items.reduce((total, item) => total + item.price * item.quantity, 0)
+}
+```
+
+创建测试文件 `src/shared/utils/calculate-total.test.ts`：
+
 ```ts
 import { describe, expect, it } from 'vitest'
+import { calculateTotal } from './calculate-total'
 
 describe('购物车金额计算', () => {
   it('空购物车金额为 0', () => {
