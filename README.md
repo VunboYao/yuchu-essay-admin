@@ -10,7 +10,8 @@
 2. [02 技能自查](./docs/02-技能自查.md) — 开干前标掌握度
 3. [03 开发计划](./docs/03-开发计划.md) — 从 Step 0 搭建
 4. [04 验收记录](./docs/04-验收记录.md) — 每步勾选
-5. [Zod 与 Vitest](./docs/learn-vitest-zod.md) — 对照本项目，不是契约
+5. [Zod 与 RHF](./docs/learn-zod-rhf.md) — 两库独立、职责与接线（通用，不是契约）
+6. [Zod 与 Vitest](./docs/learn-vitest-zod.md) — 对照本项目，不是契约
 
 总路线：[`prd/005`](../prd/005-技术栈提升-整体学习计划.md)（本目录 = P1）。
 

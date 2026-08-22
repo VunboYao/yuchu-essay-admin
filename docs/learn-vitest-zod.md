@@ -1,6 +1,7 @@
 # Zod 与 Vitest · 对本项目够用的一份
 
 > 不是通用教程。只覆盖 `Admin-React/` 会用到的部分。  
+> Zod 与 RHF **是否独立、完整 API 与非表单用法**见 [learn-zod-rhf.md](./learn-zod-rhf.md)。  
 > 对照你已有的：**TypeScript 类型、Vue Element `FormRules`、Go `json.Unmarshal` / `go test`**。  
 > 当前仓库：Zod 已用于 env；Vitest 暂缓。读完能看懂现有代码，并知道后面 Step 会写成什么样。
 
