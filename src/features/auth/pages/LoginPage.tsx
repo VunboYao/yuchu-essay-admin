@@ -2,12 +2,13 @@ import { Controller, useForm } from 'react-hook-form'
 import type { LoginSchemaInput, LoginSchemaOutput } from '../schemas'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema } from '../schemas'
-import { Form, Input, Button } from 'antd'
+import { Form, Input, Button, App } from 'antd'
 import styles from './LoginPage.module.css'
 import { login } from '../api'
 import { useAuthStore, type AuthStore } from '../auth-store'
 
 export function Component() {
+  const { message } = App.useApp()
   // 设置认证状态
   const setAuth = useAuthStore((state: AuthStore) => state.setAuth)
 
@@ -26,6 +27,7 @@ export function Component() {
     const result = await login(data)
     // 只写会话；离开 /login 由 AuthGate 根据安全 redirect 声明式跳转
     setAuth(result)
+    message.success('登录成功')
   }
 
   const isProd = import.meta.env.PROD

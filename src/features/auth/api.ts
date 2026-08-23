@@ -10,7 +10,7 @@ export const login = (data: LoginSchemaOutput): Promise<LoginResult> => {
           token: '1234567890',
           adminId: 1,
           username: 'admin',
-          role: 'admin',
+          role: 'Super Admin',
         })
       } else {
         reject(new Error('登录失败'))

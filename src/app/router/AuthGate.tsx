@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useAuthStore } from '@/features/auth/auth-store'
 import { Navigate, useLocation, Outlet } from 'react-router'
 
@@ -21,11 +22,22 @@ function parseRedirectUrl(search: string): string {
 export function AuthGate() {
   const location = useLocation()
   const token = useAuthStore((state) => state.token)
+  const skipRedirect = useAuthStore((state) => state.skipRedirect)
+
+  // 落到 /login 后再清标记，避免 render 里 setState / StrictMode 提前消费
+  useEffect(() => {
+    if (location.pathname === '/login' && skipRedirect) {
+      useAuthStore.setState({ skipRedirect: false })
+    }
+  }, [location.pathname, skipRedirect])
 
   // 已登录停在 /login：跟登录成功后的 setAuth 重渲染是同一条分支，必须吃 redirect
   if (token && location.pathname === '/login') {
     return <Navigate replace to={parseRedirectUrl(location.search)} />
   } else if (!token && location.pathname !== '/login') {
+    if (skipRedirect) {
+      return <Navigate replace to="/login" />
+    }
     const redirectUrl = `${location.pathname}${location.search}${location.hash}`
     const loginUrl = `/login?redirect=${encodeURIComponent(redirectUrl)}`
     return <Navigate replace to={loginUrl} />
