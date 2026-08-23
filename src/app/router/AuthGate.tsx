@@ -1,22 +1,33 @@
 import { useAuthStore } from '@/features/auth/auth-store'
 import { Navigate, useLocation, Outlet } from 'react-router'
 
+const FALLBACK = '/dashboard'
+
+/** 只接受本站内部绝对路径；非法或指向登录页时回退 dashboard。 */
+function parseRedirectUrl(search: string): string {
+  const redirect = new URLSearchParams(search).get('redirect')
+  if (!redirect || !redirect.startsWith('/') || redirect.startsWith('//')) {
+    return FALLBACK
+  }
+  // `/articles?page=2#body` → `/articles`，用来判断是不是又指回登录页
+  // /[?#]/：在第一个 ? 或 # 处切开
+  const pathname = redirect.split(/[?#]/)[0]
+  if (pathname === '/login') {
+    return FALLBACK
+  }
+  return redirect
+}
+
 export function AuthGate() {
   const location = useLocation()
-
-  // 获取当前路径和查询参数
-  const redirectUrl = `${location.pathname}${location.search}${location.hash}`
-  // 构建登录 URL，携带重定向参数
-  const loginUrl = `/login?redirect=${encodeURIComponent(redirectUrl)}`
-
-  // 检查是否已登录
   const token = useAuthStore((state) => state.token)
 
-  // 如果已登录，且当前路径为登录页，则重定向到首页
+  // 已登录停在 /login：跟登录成功后的 setAuth 重渲染是同一条分支，必须吃 redirect
   if (token && location.pathname === '/login') {
-    return <Navigate replace to="/dashboard" />
+    return <Navigate replace to={parseRedirectUrl(location.search)} />
   } else if (!token && location.pathname !== '/login') {
-    // 如果未登录，则重定向到登录页
+    const redirectUrl = `${location.pathname}${location.search}${location.hash}`
+    const loginUrl = `/login?redirect=${encodeURIComponent(redirectUrl)}`
     return <Navigate replace to={loginUrl} />
   } else {
     return <Outlet />

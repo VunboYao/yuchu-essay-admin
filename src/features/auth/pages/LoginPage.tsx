@@ -4,8 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema } from '../schemas'
 import { Form, Input, Button } from 'antd'
 import styles from './LoginPage.module.css'
+import { login } from '../api'
+import { useAuthStore, type AuthStore } from '../auth-store'
 
 export function Component() {
+  // 设置认证状态
+  const setAuth = useAuthStore((state: AuthStore) => state.setAuth)
+
   const {
     control,
     handleSubmit,
@@ -13,13 +18,14 @@ export function Component() {
   } = useForm<LoginSchemaInput, unknown, LoginSchemaOutput>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: '',
-      password: '',
+      username: 'admin',
+      password: 'admin123',
     },
   })
   const onSubmit = async (data: LoginSchemaOutput) => {
-    await new Promise((resolve) => setTimeout(resolve, 3000))
-    console.log(data)
+    const result = await login(data)
+    // 只写会话；离开 /login 由 AuthGate 根据安全 redirect 声明式跳转
+    setAuth(result)
   }
 
   const isProd = import.meta.env.PROD

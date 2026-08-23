@@ -6,7 +6,7 @@ import type { LoginResult } from '@/shared/types'
 type AdminInfo = Pick<LoginResult, 'adminId' | 'username' | 'role'>
 
 // 定义状态存储的类型
-type AuthStore = {
+export type AuthStore = {
   token: string | null
   adminInfo: AdminInfo | null
   // 设置认证状态

@@ -34,7 +34,7 @@ Vitest / RTL 延后到全部业务开发完成后统一接入（见 [03-开发�
 
 - 无 token 访问 `/articles`，进入 `/login?redirect=...`。
 - 登录成功后优先回到 `redirect`，没有合法 `redirect` 时进入 `/dashboard`。
-- 已登录访问 `/login`，直接进入 `/dashboard`。
+- 已登录访问 `/login`（无合法 redirect），直接进入 `/dashboard`。
 - 顶栏展示 `username` 和 `role`。
 - 退出后清空 token 与管理员信息，并回到登录页。
 - 持久化 key 为 `admin_token`，组件中不散落 `localStorage.setItem`。
@@ -381,14 +381,16 @@ App → AuthGate → Outlet
 
 | | 在 `/login` | 不在 `/login` |
 |---|---|---|
-| 有 token | → `/dashboard` | → `Outlet`（Layout） |
+| 有 token | → 安全 redirect（默认 `/dashboard`） | → `Outlet`（Layout） |
 | 没 token | → `Outlet`（登录页） | → `/login?redirect=` |
+
+检查点 3 可先把「有 token + `/login`」写成 `/dashboard`。检查点 5 必须改成吃安全 redirect：登录成功时人还停在 `/login`，Gate 会立刻重渲染这一格；写死 dashboard 会盖掉 `?redirect=/articles`。
 
 Gate 只包 Layout、`/login` 在外面时，`if (!token)` 碰巧成立（能进 Gate 的都是业务页）。`/login` 收进 Gate 后辖区变大，必须写成「没 token **且不是登录页**」。漏掉白名单会在登录页再 `Navigate` 到登录页：`redirect` 被盖掉，query 越套越长。Gate **看得到** `/login`，不等于对它再踢一次。
 
 **`Outlet` 不是默认去 dashboard。** 匹配看 URL，一开始就是 `AuthGate + 当前子路由`。`return <Outlet />` 只是把**已经匹配上的孩子**画出来：`/login` 画登录页，`/articles` 画 Layout 再 Outlet 出文章页。「过了 Gate」= 这次选择放行，不是再做一次路由查找，更不会先闪一下 dashboard 再弹回登录。
 
-**和 Vue `beforeEach` 的差别是机制，不是产品规则。** 两边都是：没 token 去登录并带完整 `redirect`，已登录访 `/login` 去 dashboard。
+**和 Vue `beforeEach` 的差别是机制，不是产品规则。** 两边都是：没 token 去登录并带完整 `redirect`；已登录访 `/login` 离开登录页（无合法 redirect 时去 dashboard）。
 
 | | Vue | React |
 |---|---|---|
@@ -498,16 +500,20 @@ Step 4 才连接真实登录接口，但本步必须跑通“提交 → 保存�
 
 1. 等待 mock 登录完成。
 2. 调用 store 的 `setAuth`。
-3. 读取并校验 `redirect`。
-4. 使用 replace 导航到目标页。
+3. 登录页到此为止，不要再 `navigate()`。
+
+离开 `/login` 是 AuthGate 的事：`setAuth` 之后 token 更新，Gate 重渲染，落入「有 token 且仍在 `/login`」，再读取并校验 `redirect`，用 `<Navigate replace>` 离开。
 
 `redirect` 来自 URL，属于不可信输入。只接受本站内部绝对路径：
 
 - 必须以单个 `/` 开头。
 - 不能以 `//` 开头。
+- 路径名不能是 `/login`（否则 Gate 会自跳循环）。
 - 不满足条件时使用 `/dashboard`。
 
 不要把完整 URL 或 `javascript:` 等内容直接交给导航。
+
+校验函数放在 `AuthGate.tsx` 同文件即可。不要为它新建 `features/auth/parse-redirect.ts`：契约里 auth feature 没有这个槽，这也不是跨 feature 的 shared 工具。
 
 ### 提示一
 
@@ -515,7 +521,7 @@ URLSearchParams 只负责读取字符串，不会替你判断它是否为本站�
 
 ### 提示二
 
-先把“决定最终跳转目标”写成一个小纯函数，再让登录页调用。这样可以用少量输入直接验证边界，也避免 JSX 中堆三元表达式。
+先把「决定最终跳转目标」写成 AuthGate 文件内的小纯函数，再让「有 token + `/login`」这一格调用。不要让登录页再调一遍：Gate 的 `<Navigate>` 在 effect 里执行，后到的那次会盖掉登录页的 `navigate()`。
 
 ### 完成信号
 
@@ -529,8 +535,34 @@ URLSearchParams 只负责读取字符串，不会替你判断它是否为本站�
 ### 自检问题
 
 - 为什么 mock 登录也应返回真实 `LoginResult` 形状？
-- 为什么 store 更新必须发生在导航之前？
+  - 方便真实接口时 store 和表单都不用改。
+- 为什么登录页只 `setAuth`，不自己 `navigate`？
+  - 见下方复盘。Vue 必须在登录页 `replace`，因为 `beforeEach` 不因 Pinia 更新而重跑；React 的 Gate 订了 token，写会话就是一次守卫重跑。
+- 为什么 store 更新必须发生在「离开登录页」之前？
+  - 先跳业务页、token 还是空，AuthGate 会再把人踢回登录，`redirect` 还会套一层。先 `setAuth`，Gate 下一轮看到 token 才会放行。
 - 为什么 redirect 必须视为不可信输入？
+  - query 用户能改。不校验就会变成开放重定向：登录成功后把管理员送到外站。
+
+### 复盘：登录页不 navigate，算不算把登录拆没了（2026-08-23）
+
+容易觉得：token 一变 Gate 就换页，登录页只剩 `setAuth`，登录这个操作被拆成两处了。
+
+**Gate 不是「token 订阅 → 全局跳转」。** 它只判断当前 `(token, URL)` 合不合法。已经在 `/articles` 时 `setAuth`，走 `Outlet`，路由不动。会换页的只有两种不一致：有 token 还停在 `/login`；没 token 却在业务页。登录成功正好落在第一格。
+
+**登录操作还在，切的是两层职责：**
+
+| | 负责 |
+|---|---|
+| 登录页 | 校验、mock/真接口、`setAuth`（以及以后的成功提示） |
+| AuthGate | `(token, URL)` 不合法时改画哪一页 |
+
+「点进入后台」在交互上仍是一次登录。「去哪」是会话与地址的派生结果，不是表单提交的第二段副作用。
+
+**和 Vue 的差别在守卫什么时候跑。** Vue `beforeEach` 只在导航时跑，`setAuth` 不会重跑守卫，所以登录页必须 `router.replace`。React Gate 是树上的组件，selector 订了 `token`，`setAuth` 就是一次重渲染。两边产品规则一样，不必在登录页再抄一遍 `replace`。
+
+**这和 Step 4 的 401 对称。** 拦截器只 `clear()`，不 `navigate`；token 空了，Gate 送回登录。一边 `setAuth`、一边 `clear()`，进出都由同一条不一致规则收拾。登录页再 `navigate`，就会和 Gate 的 `<Navigate>` 抢：未登录打开 `/articles` 再登录，人会被送去 `/dashboard` 而不是原页。
+
+**不要为校验函数新建文件。** 它只服务 Gate 的「有 token + `/login`」这一格，放在 `AuthGate.tsx` 里。登录页不要 import 它，也不要放到 `shared/utils`。
 
 ---
 
@@ -716,10 +748,18 @@ pnpm build
 
 依次检查：
 
-1. `setAuth` 是否在导航前执行。
+1. `setAuth` 是否已执行（登录页不再负责导航，Gate 必须先看到 token）。
 2. AuthGate 是否使用 selector 订阅 token。
 3. store 中 token 的空值约定是否前后一致。
 4. persist 是否只保存了错误字段。
+
+### 登录后进了 dashboard，没有回到 `/articles`
+
+依次检查：
+
+1. AuthGate「有 token + `/login`」是否写死 `/dashboard`，而不是安全 redirect。
+2. 登录页是否又调用了 `navigate()`，和 Gate 的 `<Navigate>` 抢写历史。
+3. `redirect` 校验是否把合法内部路径误判为非法。
 
 ### 刷新后丢登录态
 
@@ -764,11 +804,12 @@ pnpm build
 2. Zustand `persist` 的 `name`、`partialize` 分别控制什么？
 3. AuthGate 为什么使用 selector，而 HTTP 客户端以后使用 `getState()`？
 4. `<Navigate replace>` 与命令式 `navigate()` 在本场景的差异是什么？
-5. redirect 为什么必须保留 query/hash，又为什么必须做内部路径校验？
-6. Zod、RHF、resolver、Ant Design 各自负责什么？
-7. 为什么提交中状态用 `isSubmitting`，不另建 loading？
-8. （Step 16 再答）为什么路由测试应断言用户看到登录页，而不是测试 store 私有字段？
-9. Step 4 接真实接口时，哪些文件应替换，哪些文件不应重写？
+5. 为什么登录页只 `setAuth`、不自己跳转？这和 Vue 登录页 `router.replace`、以及 Step 4 的 401 只 `clear()` 如何对应？
+6. redirect 为什么必须保留 query/hash，又为什么必须做内部路径校验？
+7. Zod、RHF、resolver、Ant Design 各自负责什么？
+8. 为什么提交中状态用 `isSubmitting`，不另建 loading？
+9. （Step 16 再答）为什么路由测试应断言用户看到登录页，而不是测试 store 私有字段？
+10. Step 4 接真实接口时，哪些文件应替换，哪些文件不应重写？
 
 ## 7. 快速上手总结
 
@@ -777,7 +818,7 @@ pnpm build
 - Zustand `create`：创建 auth store。
 - Zustand `persist`：持久化客户端会话。
 - Zustand selector：让组件只订阅实际使用的字段。
-- React Router `Navigate`：声明式重定向。
+- React Router `Navigate`：声明式重定向。登录页只 `setAuth`，离开 `/login` 由 Gate 画 `<Navigate>`；不要登录页再 `navigate()` 与之抢写。
 - React Router `Outlet`：让 AuthGate 渲染通过守卫的子路由。
 - React Router location：生成 redirect 原目标地址。
 - Zod schema：提供登录输入的唯一校验规则。
