@@ -357,8 +357,50 @@ AuthGate 需要读取当前位置、执行声明式重定向并渲染子路由�
 ### 自检问题
 
 - 为什么 AuthGate 是组件，而不是普通工具函数？
+  - 要订阅 `token` 和 `location`，并返回 JSX。模块顶层调一次函数不会随登录/换页重跑。Vue 的 `beforeEach` 是路由运行时每次导航都调；React 这边等价物是挂在树上的组件，不是 router 配置里的纯函数。
 - 为什么它需要 selector，而不是 `getState()`？
+  - `getState()` 是拍快照，组件不订阅。登录后 token 变了，Gate 不重渲染，会一直按旧值拦。selector 才跟 store 那一格绑定。
 - 为什么声明式 `<Navigate>` 比 effect 中调用 `navigate()` 更适合当前场景？
+  - 「去哪」是 `(location, token)` 的派生结果，和 `token ? <Admin/> : <Login/>` 一类。effect 是 paint 之后再推一次历史：多一次渲染，StrictMode 下还可能连跳。`<Navigate replace>` 是本次渲染的结果，对应「这次导航作废，换成目标」。
+
+### 复盘：树、Outlet、和 Vue 守卫（2026-08-23）
+
+检查点 3 容易把三件事缠在一起：**磁盘目录**、**路由树**、**这次渲染画谁**。下面按已对齐的实现收口。
+
+**两棵树不是一回事。** 契约锁的是文件放哪：`AuthGate` 在 `app/router`，`AdminLayout` 在 `app/layouts`，登录页仍在 `features/auth/pages`。检查点 3 画的是运行时谁包谁：
+
+```text
+App → AuthGate → Outlet
+         ├── /login
+         └── AdminLayout → 业务页
+```
+
+`/login` 挂到 Gate 下面，不等于把 `LoginPage` 搬进 `app/`。把它塞进 `AdminLayout` 才会循环（登录页先套后台框，再被无 token 踢回登录）。
+
+**三条规则必须互斥。** token × 是否登录页是四格、三种出路：
+
+| | 在 `/login` | 不在 `/login` |
+|---|---|---|
+| 有 token | → `/dashboard` | → `Outlet`（Layout） |
+| 没 token | → `Outlet`（登录页） | → `/login?redirect=` |
+
+Gate 只包 Layout、`/login` 在外面时，`if (!token)` 碰巧成立（能进 Gate 的都是业务页）。`/login` 收进 Gate 后辖区变大，必须写成「没 token **且不是登录页**」。漏掉白名单会在登录页再 `Navigate` 到登录页：`redirect` 被盖掉，query 越套越长。Gate **看得到** `/login`，不等于对它再踢一次。
+
+**`Outlet` 不是默认去 dashboard。** 匹配看 URL，一开始就是 `AuthGate + 当前子路由`。`return <Outlet />` 只是把**已经匹配上的孩子**画出来：`/login` 画登录页，`/articles` 画 Layout 再 Outlet 出文章页。「过了 Gate」= 这次选择放行，不是再做一次路由查找，更不会先闪一下 dashboard 再弹回登录。
+
+**和 Vue `beforeEach` 的差别是机制，不是产品规则。** 两边都是：没 token 去登录并带完整 `redirect`，已登录访 `/login` 去 dashboard。
+
+| | Vue | React |
+|---|---|---|
+| 挂在哪 | `router` 实例上，路由表外面 | 树里一层 layout |
+| 问的时机 | **每次导航**读 localStorage | Gate **每次渲染**（`location` 或 `token` 变了） |
+| 放行 / 改道 | `return true` / `return 地址` | `<Outlet />` / `<Navigate replace>` |
+| 登录页白名单 | `to.meta.public` | `pathname === '/login'` |
+| 完整回跳 | `to.fullPath` | 自己拼 `pathname + search + hash` |
+
+Vue 是导航中间件：先拦住再确认或取消这次导航；token 变了若没人 `router.replace`，守卫不跑。React 是「当前 token + 当前 URL 该画谁」的派生 UI，同一次渲染里决定 Outlet 还是 Navigate。selector 订阅 token，所以以后 401 只 `clear()`，跳转可以交给 Gate（不要抄 Vue 拦截器里 `router.replace`）。
+
+Vue 的 `/login` 和 Layout 平级，但 `beforeEach` 仍看得到所有 `to`。React 的 Gate 是树的一层，**匹配不到自己的 URL 就绕过去**。因此 `/login` 必须做 Gate 的子路由；未知路径的 `*` 放在 `AdminLayout` 最后一个 child，和 `index → /dashboard` 对称（未登录 Gate 先拦，已登录仍在后台框里再跳首页）。
 
 ---
 
