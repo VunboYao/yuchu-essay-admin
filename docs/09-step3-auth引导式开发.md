@@ -465,8 +465,15 @@ Ant Design 的输入组件是受控组件。本项目统一使用 `Controller`�
 ### 自检问题
 
 - Zod、RHF、resolver、Ant Form.Item 各负责什么？
+  - Zod：唯一校验规则（非空、username trim）。
+  - RHF：值和提交态（`control`、`errors`、`isSubmitting`）。
+  - `zodResolver`：把 Zod issue 翻成 RHF `errors`。
+  - Ant `Form` / `Form.Item`：竖排、label、把 `errors.xxx.message` 画到 `help`。不管值、不写 `rules`。
+  
 - 为什么这里不需要额外 `useState` 保存表单值和 loading？
+  - 值在 RHF；`handleSubmit` 的 async 没 resolve 前 `isSubmitting` 一直是 `true`。再加一份 `loading` 就是第二套状态
 - 为什么 Ant Input 应使用 `Controller`？
+  - Ant Input 是受控封装，不暴露原生 `value` ref。`register` 靠原生 input；`Controller` 提供 `value` / `onChange` / `onBlur` / `ref`，和 Ant 对得上。
 
 ---
 
