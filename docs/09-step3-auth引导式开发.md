@@ -27,7 +27,7 @@ Vitest / RTL 延后到全部业务开发完成后统一接入（见 [03-开发�
 
 点击退出
   → 清空会话
-  → 回到登录页
+  → 回到裸 /login（不要带 redirect）
 ```
 
 完成后必须满足：
@@ -36,7 +36,7 @@ Vitest / RTL 延后到全部业务开发完成后统一接入（见 [03-开发�
 - 登录成功后优先回到 `redirect`，没有合法 `redirect` 时进入 `/dashboard`。
 - 已登录访问 `/login`（无合法 redirect），直接进入 `/dashboard`。
 - 顶栏展示 `username` 和 `role`。
-- 退出后清空 token 与管理员信息，并回到登录页。
+- 退出后清空 token 与管理员信息，回到裸 `/login`。未登录再访业务页仍应带 `redirect`。
 - 持久化 key 为 `admin_token`，组件中不散落 `localStorage.setItem`。
 - 登录表单只使用 Zod + RHF 管状态和校验。
 - 提交期间按钮不可重复触发。
@@ -106,6 +106,8 @@ src/
 4. 完成后回答“自检问题”，不要只看页面能否点击。
 5. 每个检查点结束都运行最小验证，不要最后一次性排错。
 6. **跳过检查点 0 和检查点 7**（测试，已暂缓）。
+
+对照 Vue 时只抄**用户可观察结果**（URL、字段、能否回跳），不要抄 Vue 源码里的调用顺序。检查点 3、5 已选定 AuthGate 机制，后续检查点必须能填进同一张表；填不进去就是把 Vue 的 `router.replace` / 拦截器跳转又塞回来了。
 
 ---
 
@@ -579,7 +581,8 @@ URLSearchParams 只负责读取字符串，不会替你判断它是否为本站�
 - 使用精确 selector 分别读取 `adminInfo` 和 `clear`。
 - 展示 username 与 role。
 - 提供明确的退出入口。
-- 退出时先清状态，再 replace 到 `/login`。
+- 退出后会话清空，URL 为裸 `/login`（不要 `?redirect=`）。
+- 跳转交给已经存在的 AuthGate，Layout **不要** `navigate('/login')`。
 
 本步不要求照搬 Vue 的视觉样式，但不要保留硬编码用户名。
 
@@ -589,27 +592,56 @@ URLSearchParams 只负责读取字符串，不会替你判断它是否为本站�
 - 取消时不得清空状态。
 - 不要把确认逻辑放进 Zustand action；store 的 `clear()` 只负责状态。
 
+登录 / 退出成功提示放在**用户动作发生的那一层**（登录页 `setAuth` 之后、Layout 的退出回调），不要进 store、不要进 Gate。Ant Design 6 用 `App.useApp()` 的 `message`；`App` 包在 Router 外面，退出后 Layout 卸载提示仍在。
+
 ### 提示一
 
 不要使用不带 selector 的完整 store 订阅。用户名变化不应让组件订阅无关字段。
 
 ### 提示二
 
-退出后 AuthGate 也会发现 token 为空，但按钮事件仍应明确导航到 `/login`，让用户行为立即可预测。
+主动退出和「未登录访问业务页 / 以后 401」不是同一意图：后者要记住原页，前者不要。Gate 默认在「没 token 且不在登录页」时带 `redirect`。退出只要让 Gate 知道这次不要记，不要再抄 Vue 的 `router.replace('/login')` 去和 Gate 抢 URL。
+
+检查点 1 的 persist 名单不要改。可以给 `clear` 加可选参数（如 `skipRedirect`），该字段**不进** `partialize`。以后 401 仍只调 `clear()`。落到 `/login` 后再清标记；不要在 skip 分支的 render 里清（StrictMode 会提前消费，第二遍又带上 `redirect`）。不要为这个标记新建独立文件：它不是领域概念，和 store 同一次 `set` 才和 token 一起更新。
 
 ### 完成信号
 
 - 登录后顶栏显示 mock 返回的 username 与 role。
 - 刷新页面后仍显示。
 - 退出后 Local Storage 会话被清理。
-- 地址变为 `/login`。
+- 地址是裸 `/login`，没有 `redirect`。
+- 退出后再手动打开 `/articles`，应出现 `/login?redirect=...`。
 - 浏览器后退不能重新进入已退出的业务页。
 
 ### 自检问题
 
 - 为什么退出确认属于组件层，而 `clear()` 属于 store？
 - 为什么组件使用 selector，而 Step 4 HTTP 层使用 `getState()`？
-- 为什么退出导航应使用 replace？
+- 为什么主动退出不要 Layout `navigate('/login')`，而 401 与未登录访问要带 `redirect`？
+
+### 常见错误
+
+- 照抄 Vue：`clear()` 后再 `navigate('/login', { replace: true })`。Gate 看的是**当前 URL**，`clear()` 后人还在业务页，会写成 `/login?redirect=...`，和 Layout 抢历史。
+- 完成信号只验「到了登录页」，没看 query，把带 `redirect` 的失败态算过。
+- 把 `skipRedirect` 写进 persist，刷新后退出意图残留。
+- 在 skip 分支 render 里把标记清掉，开发环境 StrictMode 双渲染仍带 `redirect`。
+- 为标记新建 `logout-flag.ts`：HMR 时 Layout 和 Gate 可能不是同一份模块变量。
+
+### 复盘：退出不要抄 Vue 的 replace（2026-08-23）
+
+检查点 5 已经锁死进出都走 Gate：登录只 `setAuth`，401 只 `clear()`。退出必须能填进同一张表，不能另起一套 `navigate`。
+
+| 用户动作 | 页面只做 | Gate 做 |
+|---|---|---|
+| 登录成功 | `setAuth` | 有 token 还在 `/login` → 吃安全 redirect |
+| 未登录访问业务页 / 401 | `clear()`（401） | 没 token 不在 `/login` → `/login?redirect=` |
+| 主动退出 | `clear({ skipRedirect: true })` | 没 token 不在 `/login` 且 skip → 裸 `/login` |
+
+**产品规则两边一样，实现顺序不一样。** Vue 退出后也是裸 `/login`。Vue `beforeEach` 问的是**要去哪**（`to`）：`replace('/login')` 时 `to` 已是 public 登录页，不加 `redirect`。React Gate 问的是**现在在哪**：`clear()` 之后人还在 `/articles`，默认只能当成「未登录闯业务页」。Layout 再 `replace` 一次，通常输给 Gate，URL 带上 `redirect`。下次登录会把人送回刚退出的页。
+
+**不要写「Gate 也会动，但按钮仍应明确导航」。** 那是把两套导航叠在一起。跳转已经是 `(token, URL, skipRedirect)` 的派生结果；按钮负责确认、清态、提示。
+
+**标记放 store，不放独立文件。** 它和 `clear()` 是同一次会话更新，`partialize` 仍然只存 token 与 adminInfo。落到 `/login` 后再清，401 的 `clear()` 不传 skip，深链回跳仍在。
 
 ---
 
@@ -731,7 +763,9 @@ pnpm build
   - 应进入 `/dashboard`。
 - 点击退出
   - 状态和持久化数据被清空。
-  - 应进入 `/login`。
+  - 应进入裸 `/login`，没有 `redirect`。
+- 退出后再访问 `/articles`
+  - 应进入 `/login?redirect=...`（与主动退出区分）。
 - 退出后浏览器后退
   - 不能重新看到受保护业务页。
 - 输入空用户名或空密码
@@ -760,6 +794,15 @@ pnpm build
 1. AuthGate「有 token + `/login`」是否写死 `/dashboard`，而不是安全 redirect。
 2. 登录页是否又调用了 `navigate()`，和 Gate 的 `<Navigate>` 抢写历史。
 3. `redirect` 校验是否把合法内部路径误判为非法。
+
+### 退出后登录页带了 redirect
+
+依次检查：
+
+1. Layout 是否又 `navigate('/login')`，和 Gate 带 `redirect` 的 `<Navigate>` 抢写历史。
+2. 主动退出的 `clear()` 是否传了 skip（以后 401 的 `clear()` 必须不传）。
+3. skip 标记是否被写进 persist。
+4. 是否在 skip 分支的 render 里清掉标记（StrictMode 第二遍会走带 `redirect` 的分支）。
 
 ### 刷新后丢登录态
 
@@ -805,11 +848,12 @@ pnpm build
 3. AuthGate 为什么使用 selector，而 HTTP 客户端以后使用 `getState()`？
 4. `<Navigate replace>` 与命令式 `navigate()` 在本场景的差异是什么？
 5. 为什么登录页只 `setAuth`、不自己跳转？这和 Vue 登录页 `router.replace`、以及 Step 4 的 401 只 `clear()` 如何对应？
-6. redirect 为什么必须保留 query/hash，又为什么必须做内部路径校验？
-7. Zod、RHF、resolver、Ant Design 各自负责什么？
-8. 为什么提交中状态用 `isSubmitting`，不另建 loading？
-9. （Step 16 再答）为什么路由测试应断言用户看到登录页，而不是测试 store 私有字段？
-10. Step 4 接真实接口时，哪些文件应替换，哪些文件不应重写？
+6. 为什么主动退出只 `clear({ skipRedirect: true })`，不要抄 Vue 的 `router.replace('/login')`？
+7. redirect 为什么必须保留 query/hash，又为什么必须做内部路径校验？
+8. Zod、RHF、resolver、Ant Design 各自负责什么？
+9. 为什么提交中状态用 `isSubmitting`，不另建 loading？
+10. （Step 16 再答）为什么路由测试应断言用户看到登录页，而不是测试 store 私有字段？
+11. Step 4 接真实接口时，哪些文件应替换，哪些文件不应重写？
 
 ## 7. 快速上手总结
 
@@ -818,7 +862,8 @@ pnpm build
 - Zustand `create`：创建 auth store。
 - Zustand `persist`：持久化客户端会话。
 - Zustand selector：让组件只订阅实际使用的字段。
-- React Router `Navigate`：声明式重定向。登录页只 `setAuth`，离开 `/login` 由 Gate 画 `<Navigate>`；不要登录页再 `navigate()` 与之抢写。
+- React Router `Navigate`：声明式重定向。登录页只 `setAuth`，离开 `/login` 由 Gate 画 `<Navigate>`；主动退出只 `clear({ skipRedirect: true })`。不要页面再 `navigate()` 与 Gate 抢写。
+- `skipRedirect`：不 persist 的一次性意图，用来区分主动退出和未登录闯页 / 401。落到 `/login` 后再清。
 - React Router `Outlet`：让 AuthGate 渲染通过守卫的子路由。
 - React Router location：生成 redirect 原目标地址。
 - Zod schema：提供登录输入的唯一校验规则。
