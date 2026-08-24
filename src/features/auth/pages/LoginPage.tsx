@@ -6,6 +6,7 @@ import { Form, Input, Button, App } from 'antd'
 import styles from './LoginPage.module.css'
 import { login } from '../api'
 import { useAuthStore, type AuthStore } from '../auth-store'
+import type { ApiResponse } from '@/shared/types'
 
 export function Component() {
   const { message } = App.useApp()
@@ -24,10 +25,15 @@ export function Component() {
     },
   })
   const onSubmit = async (data: LoginSchemaOutput) => {
-    const result = await login(data)
-    // 只写会话；离开 /login 由 AuthGate 根据安全 redirect 声明式跳转
-    setAuth(result)
-    message.success('登录成功')
+    try {
+      const result = await login(data)
+      console.log(result)
+      // 只写会话；离开 /login 由 AuthGate 根据安全 redirect 声明式跳转
+      setAuth(result)
+      message.success('登录成功')
+    } catch (error) {
+      message.error((error as ApiResponse).message)
+    }
   }
 
   const isProd = import.meta.env.PROD
