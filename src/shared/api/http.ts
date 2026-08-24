@@ -17,6 +17,23 @@ http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config
 })
 
+function isLoginRequest(url: string | undefined): boolean {
+  return (url?.split('?')[0] ?? '') === '/auth/login'
+}
+
+http.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      // 登录 401 是密码错误，不是会话过期；清态会冲掉 ?redirect=
+      if (!isLoginRequest(error.config?.url)) {
+        useAuthStore.getState().clear()
+      }
+    }
+    return Promise.reject(error)
+  },
+)
+
 function isApiResponse<T>(value: unknown): value is ApiResponse<T> {
   if (typeof value !== 'object' || value === null) return false
   if (!('code' in value) || !('message' in value)) return false

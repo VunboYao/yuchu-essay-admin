@@ -3,12 +3,7 @@ export class ApiError extends Error {
   readonly code?: number
   readonly isUnauthorized: boolean
 
-  constructor(opts: {
-    message: string
-    status?: number
-    code?: number
-    isUnauthorized?: boolean
-  }) {
+  constructor(opts: { message: string; status?: number; code?: number; isUnauthorized?: boolean }) {
     super(opts.message)
     this.name = 'ApiError'
     this.status = opts.status
