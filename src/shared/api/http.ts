@@ -90,3 +90,11 @@ export function get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
 export function post<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
   return request<T>({ ...config, method: 'POST', url, data: body })
 }
+
+export function put<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
+  return request<T>({ ...config, method: 'PUT', url, data: body })
+}
+
+export function del<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  return request<T>({ ...config, method: 'DELETE', url })
+}
