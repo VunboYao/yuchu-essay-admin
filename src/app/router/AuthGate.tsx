@@ -35,6 +35,7 @@ export function AuthGate() {
   if (token && location.pathname === '/login') {
     return <Navigate replace to={parseRedirectUrl(location.search)} />
   } else if (!token && location.pathname !== '/login') {
+    // 主动退出时,不要携带redirect参数
     if (skipRedirect) {
       return <Navigate replace to="/login" />
     }

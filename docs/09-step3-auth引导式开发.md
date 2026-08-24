@@ -193,7 +193,7 @@ pnpm verify
 动作只需要：
 
 - `setAuth(result)`：从 `LoginResult` 一次写入 token 与管理员信息。
-- `clear()`：一次清空完整会话。
+- `clear(ops?: {skipRedirect?: boolean})`：一次清空完整会话。主动退出时,跳过携带redirect
 
 持久化要求：
 
@@ -230,8 +230,17 @@ pnpm verify
 ### 自检问题
 
 - 为什么 token 适合 Zustand，而文章列表不适合？
+
+  - token 是客户端会话：跨 AuthGate、顶栏、以后的 HTTP 拦截器共用；刷新后还要在；没有「过期再 refetch」这套问题
+  - 文章列表是服务端状态。塞进 Zustand 等于自己手写 Query 已经提供的东西：`queryKey`、失效、去重、retry、多页同步。工程契约写死了：列表/详情走 TanStack Query，Zustand 只放 auth（以及明确的纯客户端 UI 态）
 - 为什么 `isLoggedIn` 不应作为独立 state？
+
+  - 因为它是 `Boolean(token)` 的派生值，不是独立事实
 - 为什么 Step 4 的 HTTP 客户端应使用 `getState()`，而 React 组件应使用 selector？
+
+  - `getState()` 不订阅。拦截器也不需要订阅：下次请求再读一次就行。
+
+    组件要的是「token 变了就重画」。AuthGate、顶栏必须跟 store 那一格绑定
 
 ---
 
@@ -359,11 +368,15 @@ AuthGate 需要读取当前位置、执行声明式重定向并渲染子路由�
 ### 自检问题
 
 - 为什么 AuthGate 是组件，而不是普通工具函数？
-  - 要订阅 `token` 和 `location`，并返回 JSX。模块顶层调一次函数不会随登录/换页重跑。Vue 的 `beforeEach` 是路由运行时每次导航都调；React 这边等价物是挂在树上的组件，不是 router 配置里的纯函数。
+  - 要订阅 `token` 和 `location`，并返回 JSX。
+  - 模块顶层调一次工具函数不会随登录/换页重跑。
+  - Vue 的 `beforeEach` 是路由运行时每次导航都调；React 这边等价物是挂在树上的组件，不是 router 配置里的纯函数。
 - 为什么它需要 selector，而不是 `getState()`？
-  - `getState()` 是拍快照，组件不订阅。登录后 token 变了，Gate 不重渲染，会一直按旧值拦。selector 才跟 store 那一格绑定。
+  - `getState()` 是拍快照，组件不订阅。登录后 token 变了，Gate 不重渲染，会一直按旧值拦。
+  - selector 才跟 store 那一格绑定。
 - 为什么声明式 `<Navigate>` 比 effect 中调用 `navigate()` 更适合当前场景？
-  - 「去哪」是 `(location, token)` 的派生结果，和 `token ? <Admin/> : <Login/>` 一类。effect 是 paint 之后再推一次历史：多一次渲染，StrictMode 下还可能连跳。`<Navigate replace>` 是本次渲染的结果，对应「这次导航作废，换成目标」。
+  - 「去哪」是 `(location, token)` 的派生结果，和 `token ? <Admin/> : <Login/>` 一类。
+  - effect 是 paint 之后再推一次历史：多一次渲染，StrictMode 下还可能连跳。`<Navigate replace>` 是本次渲染的结果，对应「这次导航作废，换成目标」。
 
 ### 复盘：树、Outlet、和 Vue 守卫（2026-08-23）
 
