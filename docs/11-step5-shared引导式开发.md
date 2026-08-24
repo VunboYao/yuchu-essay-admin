@@ -112,7 +112,7 @@ Step 5 没有字段表、没有列表筛选、没有要抄的接口路径。要�
 | `message` 在 UI，不进拦截器 | 01「HTTP」；现有 [`LoginPage.tsx`](../src/features/auth/pages/LoginPage.tsx)、[`AdminLayout.tsx`](../src/app/layouts/AdminLayout.tsx) |
 | `staleTime` / `retry` / `refetchOnWindowFocus` 官方默认 | [QueryClient 默认选项](https://tanstack.com/query/latest/docs/reference/QueryClient)（项目已装 v5.101.4） |
 | Modal 受控 API（`open`、`maskClosable`、`confirmLoading`） | [Ant Design 6 Modal](https://ant.design/components/modal-cn)（项目已装 antd `^6.6.0`） |
-| QueryClient 为什么不要在 render 里 `new` | [08 §2](./08-learn-tanstack-query.md) 只读「安装并接入」；**不要**照抄它的 Provider 示例（缺 `AntdApp`），**不要**做它后半的标签页 |
+| QueryClient 为什么不要在 render 里 `new` | [08 §2](./08-learn-tanstack-query.md) 只读「安装并接入」。Provider 示例已保留 `AntdApp`，但仍**不要**做它后半的标签页 |
 
 本步不要去翻其它端的 Dialog / Message / 页内 `load()`。那些实现落在 01 的禁止照搬清单里：全局 Loading、拦截器 toast、页内 loading 旗标。你要做的是它们的 React 替代物，不是翻译。
 
@@ -283,7 +283,8 @@ ConfigProvider
 
 ### 提示一
 
-[08 §2.3](./08-learn-tanstack-query.md) 的 Provider 示例是学习切片：**没有 `AntdApp`**。那份示例若整段替换当前文件，登录成功 / 退出成功的 `message` 会丢上下文。对照 08 只看「client 从哪里 import、Devtools 放哪」，不要覆盖现有壳。
+[08 §2.3](./08-learn-tanstack-query.md) 的 Provider 示例已与当前壳对齐（保留 `AntdApp`）。
+对照时看「client 从哪里 import、Devtools 放哪」；不要删掉现有的 `AntdApp`，也不要做 08 后半的标签 CRUD。
 
 若包还没装进 `node_modules`，在 `Admin-React/` 执行 `pnpm install`。不要在仓库根装。
 
