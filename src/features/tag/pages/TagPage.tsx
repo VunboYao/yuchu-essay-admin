@@ -3,6 +3,8 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { tagKeys, tagQueries } from '../queries'
 import { deleteTag, updateTag, type Tag, type TagListQuery } from '../api'
 import { CreateTagForm } from '../components/CreateTagForm'
+import { QueryState, PageHeader, AppFormDialog } from '@/shared/ui'
+import type { QueryStateEnum } from '@/shared/ui/QueryState'
 
 const initialQuery: TagListQuery = {
   keyword: '',
@@ -14,6 +16,9 @@ const initialQuery: TagListQuery = {
 export function Component() {
   const queryClinet = useQueryClient()
   const [query, setQuery] = useState<TagListQuery>(initialQuery)
+  const [open, setOpen] = useState(false)
+  const [confirmLoading, setConfirmLoading] = useState(false)
+  const [tempStatus, setTempStatus] = useState<QueryStateEnum>('pending')
 
   const tagsQuery = useQuery({
     ...tagQueries.list(query),
@@ -46,20 +51,51 @@ export function Component() {
   }
 
   if (tagsQuery.isPending && !tagsQuery.isPlaceholderData) {
-    return <p>标签列表加载中....</p>
+    return <p>首次挂载: 标签列表加载中....</p>
   }
 
   if (tagsQuery.isLoadingError) {
-    return <p role="alert">{tagsQuery.error.message}</p>
+    return <p role="alert">刷新失败: {tagsQuery.error.message}</p>
   }
 
   const pageData = tagsQuery.data
   const hasNextPage = query.page * query.pageSize < pageData.total
 
+  const handleSubmit = async () => {
+    setConfirmLoading(true)
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+    setConfirmLoading(false)
+    setOpen(false)
+  }
+
   return (
     <main>
-      <h2>标签管理 </h2>
-      <CreateTagForm />
+      <PageHeader title="标签管理">
+        <button type="button" onClick={() => setOpen(true)}>
+          创建标签
+        </button>
+      </PageHeader>
+      <select onChange={(event) => setTempStatus(event.target.value as QueryStateEnum)}>
+        <option value="pending">加载中</option>
+        <option value="error">错误</option>
+        <option value="empty">空</option>
+        <option value="success">成功</option>
+      </select>
+      <QueryState status={tempStatus} errorText="网络错误">
+        <h2>标签管理 </h2>
+        <button type="button" onClick={() => setOpen(true)}>
+          创建标签
+        </button>
+      </QueryState>
+      <AppFormDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="创建标签"
+        confirmLoading={confirmLoading}
+        onSubmit={handleSubmit}
+      >
+        <CreateTagForm />
+      </AppFormDialog>
       <section aria-label="标签筛选">
         <input
           aria-label="标签名称"
