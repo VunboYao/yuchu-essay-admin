@@ -1,18 +1,24 @@
 import styles from './TagPage.module.css'
 import { PageHeader, AppFormDialog, QueryState, type QueryStateEnum } from '@/shared/ui'
-import { Button, Input, Select, Table, type TableProps, Tag } from 'antd'
+import { Button, Input, Select, Table, type TableProps, Tag, App, Popconfirm } from 'antd'
 import { useState } from 'react'
 import { TagForm } from '../components/TagForm'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { tagWriteSchema, type TagWriteInput, type TagWriteOutput } from '../schemas'
-import type { TagListQuery } from '../api'
+import { createTag, updateTag, deleteTag, type TagListQuery } from '../api'
 import { STATUS_OPTIONS } from '@/shared/constants/options'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { tagQueries } from '../queries'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { tagKeys, tagQueries } from '../queries'
 import type { Tag as TagType } from '@/shared/types'
 import { statusLabel } from '@/shared/constants/options'
-import type { ApiError } from '@/shared/api'
+import { ApiError } from '@/shared/api/api-error'
+
+const createDefaults = {
+  name: '',
+  sortOrder: 0,
+  status: 1 as const,
+}
 
 const initialQuery: TagListQuery = {
   status: '',
@@ -24,17 +30,16 @@ const initialQuery: TagListQuery = {
 export function Component() {
   const [query, setQuery] = useState<TagListQuery>(initialQuery)
   const [keywordDraft, setKeywordDraft] = useState(initialQuery.keyword ?? '')
+  const { message } = App.useApp()
+  const queryClient = useQueryClient()
   const {
     control,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<TagWriteInput, unknown, TagWriteOutput>({
     resolver: zodResolver(tagWriteSchema),
-    defaultValues: {
-      name: '',
-      sortOrder: 0,
-      status: 1,
-    },
+    defaultValues: createDefaults,
   })
   const listQuery = useQuery({
     ...tagQueries.list(query),
@@ -42,6 +47,88 @@ export function Component() {
   })
 
   const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState<TagType | null>(null)
+
+  const createMutation = useMutation({
+    mutationFn: createTag,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tagKeys.lists() })
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: updateTag,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tagKeys.lists() })
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteTag,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tagKeys.lists() })
+    },
+  })
+
+  const actionsLocked = updateMutation.isPending || deleteMutation.isPending
+
+  const openCreate = () => {
+    reset(createDefaults)
+    setEditing(null)
+    setOpen(true)
+  }
+
+  const openEdit = (tag: TagType) => {
+    reset({
+      name: tag.name,
+      sortOrder: tag.sortOrder,
+      status: tag.status,
+    })
+    setEditing(tag)
+    setOpen(true)
+  }
+
+  const onValid = async (input: TagWriteOutput) => {
+    try {
+      if (editing) {
+        await updateMutation.mutateAsync({ id: editing.id, input })
+        message.success('更新成功')
+      } else {
+        await createMutation.mutateAsync(input)
+        message.success('创建成功')
+      }
+      setOpen(false)
+    } catch (error) {
+      message.error(error instanceof ApiError ? error.message : '操作失败')
+    }
+  }
+
+  const handleToggleStatus = (tag: TagType) => {
+    updateMutation.mutate(
+      {
+        id: tag.id,
+        input: {
+          name: tag.name,
+          sortOrder: tag.sortOrder,
+          status: tag.status === 1 ? 0 : 1,
+        },
+      },
+      {
+        onError: (error) => {
+          message.error(error instanceof ApiError ? error.message : '操作失败')
+        },
+      },
+    )
+  }
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteMutation.mutateAsync(id)
+      message.success('删除成功')
+    } catch (error) {
+      message.error(error instanceof ApiError ? error.message : '删除失败')
+    }
+  }
 
   const columns: TableProps<TagType>['columns'] = [
     {
@@ -64,11 +151,31 @@ export function Component() {
     {
       title: '操作',
       dataIndex: 'action',
-      render: () => (
+      render: (_, record) => (
         <div className={styles.rowActions}>
-          <Button type="link" onClick={() => setOpen(true)}>
+          <Button type="link" disabled={actionsLocked} onClick={() => openEdit(record)}>
             编辑
           </Button>
+          <Button type="link" disabled={actionsLocked} onClick={() => handleToggleStatus(record)}>
+            {record.status === 1 ? '禁用' : '启用'}
+          </Button>
+          {record.status === 1 ? (
+            <Button type="link" disabled title="请先禁用再删除">
+              删除
+            </Button>
+          ) : (
+            <Popconfirm
+              title="确定删除该标签？删除后不可恢复。"
+              onConfirm={() => handleDelete(record.id)}
+              okText="确定"
+              cancelText="取消"
+              disabled={actionsLocked}
+            >
+              <Button type="link" danger disabled={actionsLocked}>
+                删除
+              </Button>
+            </Popconfirm>
+          )}
         </div>
       ),
     },
@@ -99,7 +206,7 @@ export function Component() {
         <PageHeader
           title="标签管理"
           extra={
-            <Button type="primary" onClick={() => setOpen(true)}>
+            <Button type="primary" onClick={openCreate}>
               新建标签
             </Button>
           }
@@ -121,7 +228,7 @@ export function Component() {
 
         <QueryState
           status={queryStatus}
-          errorText={(listQuery.error as ApiError) ?? '加载失败'}
+          errorText={listQuery.error instanceof ApiError ? listQuery.error.message : '加载失败'}
           emptyText="暂无标签"
         >
           {showFetchingHint ? <p className={styles.fetchingHint}>数据同步中</p> : null}
@@ -146,8 +253,9 @@ export function Component() {
       <AppFormDialog
         open={open}
         onClose={() => setOpen(false)}
-        title="新建标签"
-        onSubmit={() => void handleSubmit(() => undefined)()}
+        title={editing ? '编辑标签' : '新建标签'}
+        confirmLoading={editing ? updateMutation.isPending : createMutation.isPending}
+        onSubmit={() => void handleSubmit(onValid)()}
       >
         <TagForm control={control} errors={errors} />
       </AppFormDialog>
