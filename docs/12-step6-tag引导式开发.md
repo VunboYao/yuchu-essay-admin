@@ -138,9 +138,9 @@ Step 6 要对等的是：路由 `/tags`、接口路径、请求/响应字段、�
 | `keyword` | string，可选 | 按名称模糊搜；空串或纯空格不要传 |
 | `status` | `0 \| 1`，可选 | 不传 = 全部；不要传空串给后端 |
 | `page` | number | 从 1 起；缺省 1 |
-| `pageSize` | number | 缺省 **20**，上限 100（后端 `pageParams`） |
+| `pageSize` | number | 后端缺省 **20**，上限 100（`pageParams`）。本页 UI 不展示切换，请求固定带 `10`，见检查点 6 |
 
-响应解包后是 `PageData<Tag>`：`{ list, total, page, pageSize }`。排序由后端做：`sort_order DESC, id DESC`。前端不要再本地 sort。
+响应解包后是 `PageData<Tag>`：`{ list, total, page, pageSize }`。排序由后端做：`sort_order DESC, id DESC`。前端不要再本地 sort。后端缺省 20 是「请求没带 pageSize 时」的值，不是前端必须锁 20。
 
 **2. 实体与写入口**
 
@@ -194,8 +194,8 @@ Step 6 要对等的是：路由 `/tags`、接口路径、请求/响应字段、�
 
 ### 自检问题
 
-- 为什么 `pageSize` 默认是 20 不是 5？
-  - 5 是 08 为了翻页演示改的。后端缺省 20。本步按后端。
+- 为什么后端 `pageSize` 缺省 20，本页初始却是 10？
+  - 20 是 handler 没收到该参数时的缺省。本页 `showSizeChanger: false`，前端锁 10，数据量不大时仍能翻页。Network 里应看到 `pageSize=10`，不是漏传。
 - 为什么禁用/删除规则要写在契约里，而不是等 toast 才知道？
   - 按钮能先挡住的，不要让用户点出 400。挡不住的（重名、仍被引用）再展示 `ApiError.message`。
 - 为什么本步不读 `Admin/src` 也能锁字段？
@@ -426,19 +426,19 @@ Devtools 中，改关键字或翻页会出现不同的 `['tags','list',{...}]`�
 
 页面上保留一份 `query: TagListQuery` 作为**已生效**的查询条件（它进 `queryKey`）。
 
-另外保留一份 `keywordDraft`（或等价）。工具条：
+另外保留一份 `keywordDraft`（或等价）。筛选放进 `PageHeader` 的 `children`（检查点 7），不要再做一排独立 toolbar：
 
 - 名称：受控输入，改的是 draft，不改 `query.keyword`。
 - 搜索按钮 / `Input.Search` 的 `onSearch`：把 draft 写入 `query`，同时 `page: 1`。
 - 状态 `Select`：立刻写入 `query.status`，同时 `page: 1`。选项来自 `STATUS_OPTIONS`，外加一个「全部」值为 `''`。
-- 分页：由 Table 的 `pagination.onChange` 改 `page` / `pageSize`；改 `pageSize` 时回到第 1 页。
+- 分页：Table 的 `pagination.onChange` 只改 `page`。本页 `showSizeChanger: false`，`pageSize` 保持初始 10。
 
 不要 debounce 每个字符（那是另一套复杂度）。不要用 Effect 把 draft 同步到 query。
 
 初始 `query`：
 
 ```ts
-{ keyword: '', status: '', page: 1, pageSize: 20 }
+{ keyword: '', status: '', page: 1, pageSize: 10 }
 ```
 
 ### 提示一
@@ -449,7 +449,7 @@ Devtools 中，改关键字或翻页会出现不同的 `['tags','list',{...}]`�
 
 ### 提示二
 
-`query.page * query.pageSize < total` 这种手写「有没有下一页」可以丢掉。Ant Table 的分页用 `total` 自己算。你要做的是把 `current` / `pageSize` / `total` 做成受控，别让 Table 自己偷偷存一份页码。
+`query.page * query.pageSize < total` 这种手写「有没有下一页」可以丢掉。Ant Table 的分页用 `total` 自己算。你要做的是把 `current` / `pageSize` / `total` 做成受控，别让 Table 自己偷偷存一份页码。antd 默认只在 `total >= 50` 时才画出条数切换；本页产品选择是**始终不展示**，所以要显式 `showSizeChanger: false`，不要靠数据量碰巧藏起来。
 
 ### 完成信号
 
@@ -475,27 +475,29 @@ Devtools 中，改关键字或翻页会出现不同的 `['tags','list',{...}]`�
 ### 任务
 
 1. 用 `PageHeader`：title「标签管理」，`extra` 放「新建标签」。
-2. 工具条放筛选控件（检查点 6）。
-3. 用 `QueryState` 包住表格，按下面优先级映射（先到先结束）：
+2. 筛选控件放进 `PageHeader` 的 `children`（检查点 6）。`PageHeader` 已有 `.filters` 槽，本页不要再做 `.toolbar`。
+3. 用 `QueryState` 包住表格。四态在 **render 里用 if/else 派生**，不要 `useEffect` + `setStatus`，也不要用嵌套三元（见下方「常见错误」）：
 
 | 条件 | `status` |
 |---|---|
 | `isPending && !isPlaceholderData` | `'pending'` |
-| 没有 `data` 且（`isError` 或 `isLoadingError`） | `'error'` |
+| `!data && isError` | `'error'` |
 | `data.list.length === 0` | `'empty'` |
 | 其余（有 `data`） | `'success'` |
 
+`isLoadingError` 语义上就是「首次失败、没有 data」，写成 `!data && isError` 即可，不必再 `|| isLoadingError`。
+
 有数据时的后台刷新（`isFetching && !isPending`）**不要**卸表格，也不要把 `status` 设回 `'pending'`。给一行轻量提示即可。
 
-有数据时的 `isRefetchError`：表格仍显示上一份成功数据，另外 `message.error` 或表格上方一行提示。不要整页换成 QueryState 的 error。
+有数据时的 `isRefetchError`：表格仍显示上一份成功数据，表格上方一行提示。不要整页换成 QueryState 的 error，也不要在 render 里调 `message.error`（每轮都会弹）。
 
 4. 成功分支用 antd `Table`：
    - `rowKey="id"`（禁止用下标）。
    - 列：名称、排序、状态、更新时间、操作。
    - 状态列用 `statusLabel`，不要自己再写一遍三元。
-   - 受控分页：`current` / `pageSize` / `total` / `onChange`。
+   - 受控分页：`current` / `pageSize` / `total` / `onChange`；`showSizeChanger: false`，`pageSize` 锁 10。
    - `loading` 不要绑 `isFetching`（会在翻页占位时整表转圈，和 Skeleton 重复）。首次加载交给 QueryState。
-5. **样式不要自己发明。** 新建 `src/features/tag/pages/TagPage.module.css`，整文件如下，页面用这些 class。
+5. **样式不要自己发明。** 筛选间距走 `PageHeader.module.css`。本页只建 `src/features/tag/pages/TagPage.module.css`，整文件如下：
 
 ```css
 .page {
@@ -504,22 +506,12 @@ Devtools 中，改关键字或翻页会出现不同的 `['tags','list',{...}]`�
   gap: 16px;
 }
 
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
 .keyword {
   width: 220px;
+}
+
+.status {
+  width: 160px;
 }
 
 .fetchingHint {
@@ -527,6 +519,13 @@ Devtools 中，改关键字或翻页会出现不同的 `['tags','list',{...}]`�
   font-size: 13px;
   line-height: 1.5;
   color: rgba(0, 0, 0, 0.45);
+}
+
+.fetchError {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #ff4d4f;
 }
 
 .rowActions {
@@ -541,30 +540,46 @@ Devtools 中，改关键字或翻页会出现不同的 `['tags','list',{...}]`�
 
 ```tsx
 <div className={styles.page}>
-  <PageHeader title="标签管理" extra={/* 新建按钮 */} />
-
-  <div className={styles.toolbar}>
-    <div className={styles.filters}>
-      {/* Input.Search 用 className={styles.keyword} */}
-      {/* 状态 Select，宽度 140 即可：style={{ width: 140 }} */}
-    </div>
-  </div>
-
-  {showFetchingHint ? (
-    <p className={styles.fetchingHint}>数据同步中</p>
-  ) : null}
+  <PageHeader title="标签管理" extra={/* 新建按钮 */}>
+    {/* Input.Search 用 className={styles.keyword} */}
+    {/* 状态 Select 用 className={styles.status} */}
+  </PageHeader>
 
   <QueryState
     status={queryStatus}
     errorText={tagsQuery.error ?? '加载失败'}
     emptyText="暂无标签"
   >
+    {showFetchingHint ? (
+      <p className={styles.fetchingHint}>数据同步中</p>
+    ) : null}
+    {showFetchError ? (
+      <p className={styles.fetchError}>数据同步失败</p>
+    ) : null}
     <Table /* ... */ />
   </QueryState>
 </div>
 ```
 
-不要在这一步引入 `shared/styles` token、不要上 Tailwind、不要把颜色写进页面。操作列的按钮间距用 `.rowActions`。
+四态推荐写法（不要抄成嵌套三元）：
+
+```ts
+let queryStatus: QueryStateEnum = 'success'
+if (tagsQuery.isPending && !tagsQuery.isPlaceholderData) {
+  queryStatus = 'pending'
+} else if (!tagsQuery.data && tagsQuery.isError) {
+  queryStatus = 'error'
+} else if (tagsQuery.data?.list.length === 0) {
+  queryStatus = 'empty'
+}
+
+const showFetchingHint = Boolean(
+  tagsQuery.data && tagsQuery.isFetching && !tagsQuery.isPending,
+)
+const showFetchError = Boolean(tagsQuery.data && tagsQuery.isRefetchError)
+```
+
+不要在这一步引入 `shared/styles` token、不要上 Tailwind、不要在 TSX 里写 `color: '#xxx'`。操作列的按钮间距用 `.rowActions`。
 
 ### 提示一
 
@@ -581,8 +596,10 @@ Layout 的 `Content` 已经有白底和 padding（`AdminLayout.module.css` 的 `
 ### 常见错误
 
 - `status={isPending ? 'pending' : ...}` 忘记 `isPlaceholderData`，翻页闪 Skeleton。
+- 用嵌套三元写 `isError || isLoadingError`：Query 的返回值是 discriminated union，`||` 右侧会被收成 `never`（`Property 'isLoadingError' does not exist on type 'never'`）。用 if/else + `!data && isError`。
+- 用 `useEffect` 把四态同步进另一份 `useState`：派生展示直接算。
 - `loading={tagsQuery.isFetching}` 导致占位刷新时表格和 Skeleton 一起转。
-- 自己再写一套 `.page { padding: 24px }`，和 Layout 的 padding 叠成很空。
+- 自己再写一套 `.page { padding: 24px }` 或 `.toolbar`，和 Layout / PageHeader 的间距叠起来。
 
 ### 完成信号
 
@@ -590,7 +607,8 @@ Layout 的 `Content` 已经有白底和 padding（`AdminLayout.module.css` 的 `
 - 空库或搜不到：QueryState 空态，不是报错。
 - 断网或停后端再进页：QueryState 错误态。
 - 翻页不闪成整页 Skeleton。
-- 样式只有这一份 module，没有行内 `color: '#xxx'`。
+- 筛选在 PageHeader 里，不是独立 toolbar。
+- 样式只有这一份 module，TSX 里没有行内 `color: '#xxx'`。
 
 ### 自检问题
 
@@ -598,6 +616,8 @@ Layout 的 `Content` 已经有白底和 padding（`AdminLayout.module.css` 的 `
   - 没数据时转圈是在等第一份结果。有数据时转圈等于把表藏起来。审查条第 3 条要能分开描述。
 - 为什么本步把 CSS 写死在文档里？
   - 列表页的间距不是本步要学的概念。概念在 Query 和表单。间距分叉了，后面 10 页会各写一套。
+- 为什么筛选放进 PageHeader，不自己做 `.toolbar`？
+  - `PageHeader` 已经有筛选槽。后面列表页抄「标题 + extra + children」，间距不会分叉。
 
 ---
 
@@ -748,7 +768,7 @@ pnpm build
   - Devtools 的 key 含 `keyword`、`status`、`page`、`pageSize`。
   - 输入关键字不点搜索：不发新请求。点搜索 / 回车后才带 `keyword`，且 `page=1`。
   - 状态筛选立刻生效，`page=1`。
-  - 翻页不闪整页 Skeleton；`pageSize` 默认 20。
+  - 翻页不闪整页 Skeleton；`pageSize` 固定 10，不展示条数切换。
 - 创建
   - 空名称：表单项错误，窗不关。
   - 合法创建成功，列表刷新，无手动 F5。

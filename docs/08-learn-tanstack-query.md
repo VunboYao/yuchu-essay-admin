@@ -1,7 +1,7 @@
 # TanStack Query：从标签列表到写后同步
 
 > 本文基于项目实际安装的 `@tanstack/react-query 5.101.4`，对应
-> [`03-开发计划.md`](./03-开发计划.md) 的 Step 5～6。
+> `[03-开发计划.md](./03-开发计划.md)` 的 Step 5～6。
 > 主线只有一条：接入 QueryClient，并用真实标签接口完成列表查询、筛选分页、创建、
 > 状态切换、删除和写后同步。
 
@@ -45,6 +45,8 @@ features/tag/components/CreateTagForm.tsx
 - 页面不使用 `useEffect` 拉取列表，也不复制第二份列表 state；
 - `pnpm verify` 通过。
 
+
+
 ### 0.1 前置条件
 
 本文不是从空 Vite 项目开始，执行前应已完成：
@@ -66,6 +68,8 @@ features/tag/components/CreateTagForm.tsx
 `VITE_API_BASE=/admin/api/v1` 提供。Query 层不重复解包响应，也不直接处理 token。
 
 ---
+
+
 
 ## 1. 先建立服务端状态模型
 
@@ -116,7 +120,11 @@ Query 用于读取服务端数据，Mutation 用于执行创建、更新、删�
 
 ---
 
+
+
 ## 2. 安装并接入唯一 QueryClient
+
+
 
 ### 2.1 安装
 
@@ -164,12 +172,14 @@ export const queryClient = new QueryClient({
 
 这四个值覆盖的是「没有在单个 `useQuery` / `useMutation` 里声明时」的行为：
 
-| option | 本文取值 | 浏览器默认 | 替换后标签页会怎样 |
-| --- | --- | --- | --- |
-| `queries.staleTime` | `30_000` | `0` | 改小会更勤后台刷新；改 `Infinity` 则除非 `invalidateQueries`，否则不因时间变 stale |
-| `queries.retry` | `1` | `3` | `0` / `false` 失败立刻展示错误；`true` 无限重试 |
-| `queries.refetchOnWindowFocus` | `false` | `true` | 改回 `true` 后，切回浏览器窗口会刷新已 stale 的列表 |
-| `mutations.retry` | `0` | `0` | 显式写出是为了防止以后改成 `1`，创建标签可能被重复提交 |
+
+| option                         | 本文取值     | 浏览器默认  | 替换后标签页会怎样                                                    |
+| ------------------------------ | -------- | ------ | ------------------------------------------------------------ |
+| `queries.staleTime`            | `30_000` | `0`    | 改小会更勤后台刷新；改 `Infinity` 则除非 `invalidateQueries`，否则不因时间变 stale |
+| `queries.retry`                | `1`      | `3`    | `0` / `false` 失败立刻展示错误；`true` 无限重试                           |
+| `queries.refetchOnWindowFocus` | `false`  | `true` | 改回 `true` 后，切回浏览器窗口会刷新已 stale 的列表                            |
+| `mutations.retry`              | `0`      | `0`    | 显式写出是为了防止以后改成 `1`，创建标签可能被重复提交                                |
+
 
 单个查询可以覆盖项目默认值，例如某次预取把 `staleTime` 改成 `60_000`。不要为每个页面
 再 `new QueryClient()`。
@@ -231,14 +241,16 @@ createRoot(document.getElementById('root')!).render(
 #### API 细节：`QueryClientProvider` 与 Devtools
 
 - `QueryClientProvider` 的 `client` 必须指向模块单例 `queryClient`。组件通过
-  `useQueryClient()` 拿到的就是这一份。
+`useQueryClient()` 拿到的就是这一份。
 - `ReactQueryDevtools` 的 `initialIsOpen` 默认 `false`。本文写成显式 `false`，开发时
-  面板收起，不挡标签页。改成 `true` 只会让面板默认展开，不影响缓存。
+面板收起，不挡标签页。改成 `true` 只会让面板默认展开，不影响缓存。
 - 生产环境下组件不渲染面板。本项目直接挂在 `AppProviders`，不要为此再拆一套条件编译。
 
 本步未用：`buttonPosition`、`position`（只改浮动按钮位置，与学习无关）。
 
 ---
+
+
 
 ## 3. 对齐真实标签接口
 
@@ -332,6 +344,8 @@ export function deleteTag(id: number): Promise<{ id: number }> {
 - `AbortSignal` 继续传给 HTTP 层，组件不需要手写取消标记。
 
 ---
+
+
 
 ## 4. 定义查询：从页面里的 `useQuery` 收到 `queries.ts`
 
@@ -487,6 +501,8 @@ queryClient.invalidateQueries({ queryKey: tagKeys.lists() })
 
 ---
 
+
+
 ## 5. 实现列表查询、筛选和分页
 
 上一节已经能 `useQuery(tagQueries.list(query))`。这一节把它接到 TagPage：先认返回值怎么读，
@@ -541,18 +557,20 @@ fetchStatus = queryFn 现在在干什么   fetching | paused | idle
 
 派生 boolean 都从这两根轴算出来：
 
-| 字段 | 定义 | 这一步怎么用 |
-| --- | --- | --- |
-| `isPending` | `status === 'pending'` | 还没有成功数据，整页骨架 |
-| `isSuccess` | `status === 'success'` | 已有真实成功结果 |
-| `isError` | `status === 'error'` | 最近一次请求失败；后台刷新失败时 `data` 可能仍在 |
-| `isFetching` | `fetchStatus === 'fetching'` | 「数据同步中...」细条，包括后台刷新 |
-| `isLoading` | `isPending && isFetching` | 首次在飞。不要用它当整页骨架的唯一条件 |
-| `isRefetching` | `isFetching && !isPending` | 已有成功数据时的后台刷新 |
-| `isLoadingError` | 第一次请求就失败 | 整页错误。此时没有可展示的 `data` |
-| `isRefetchError` | 刷新失败 | 提示失败，继续显示旧 `data` |
-| `isPaused` | `fetchStatus === 'paused'` | 离线暂停；本 Demo 不处理 |
-| `isStale` | 已过 `staleTime` 或被失效 | 一般不用来渲染 |
+
+| 字段               | 定义                           | 这一步怎么用                       |
+| ---------------- | ---------------------------- | ---------------------------- |
+| `isPending`      | `status === 'pending'`       | 还没有成功数据，整页骨架                 |
+| `isSuccess`      | `status === 'success'`       | 已有真实成功结果                     |
+| `isError`        | `status === 'error'`         | 最近一次请求失败；后台刷新失败时 `data` 可能仍在 |
+| `isFetching`     | `fetchStatus === 'fetching'` | 「数据同步中...」细条，包括后台刷新          |
+| `isLoading`      | `isPending && isFetching`    | 首次在飞。不要用它当整页骨架的唯一条件          |
+| `isRefetching`   | `isFetching && !isPending`   | 已有成功数据时的后台刷新                 |
+| `isLoadingError` | 第一次请求就失败                     | 整页错误。此时没有可展示的 `data`         |
+| `isRefetchError` | 刷新失败                         | 提示失败，继续显示旧 `data`            |
+| `isPaused`       | `fetchStatus === 'paused'`   | 离线暂停；本 Demo 不处理              |
+| `isStale`        | 已过 `staleTime` 或被失效          | 一般不用来渲染                      |
+
 
 页面该读的数据字段：
 
@@ -579,7 +597,7 @@ const tagsQuery = useQuery({
 
 - 页面不会切换成空白；
 - `isPlaceholderData` 为 `true`；
-- **v5 里该查询仍是 `pending`，不是 `success`**；
+- **v5 里该查询仍是** `pending`**，不是** `success`；
 - 占位数据不会作为新 key 的真实成功结果持久写入缓存；
 - 新结果到达后自动替换，`status` 才变为 `success`。
 
@@ -816,11 +834,13 @@ const tagsQuery = useQuery({
 })
 ```
 
-| option | 本示例 | 替换后 |
-| --- | --- | --- |
-| `queryKey` | `tagKeys.list(query)` | 少任一筛选字段，就会串缓存 |
-| `queryFn` | `({ signal }) => listTags(query, signal)` | 必须 throw，不能返回 `undefined` |
-| `placeholderData` | `keepPreviousData` | 去掉后翻页会先闪空白；改成固定对象只适合骨架形状，不适合当上一页数据 |
+
+| option            | 本示例                                       | 替换后                                |
+| ----------------- | ----------------------------------------- | ---------------------------------- |
+| `queryKey`        | `tagKeys.list(query)`                     | 少任一筛选字段，就会串缓存                      |
+| `queryFn`         | `({ signal }) => listTags(query, signal)` | 必须 throw，不能返回 `undefined`          |
+| `placeholderData` | `keepPreviousData`                        | 去掉后翻页会先闪空白；改成固定对象只适合骨架形状，不适合当上一页数据 |
+
 
 `keepPreviousData` 是官方提供的函数形式 `placeholderData`：把「上一个 observer 的 data」
 临时借给新 key。它不是把第 1 页写入第 2 页的缓存。
@@ -833,6 +853,8 @@ const tagsQuery = useQuery({
 - `refetchOnMount`：见 §8.3
 
 ---
+
+
 
 ## 6. 用 zod + RHF 创建标签
 
@@ -954,11 +976,13 @@ createMutation.mutate(input)
 
 **关键参数**
 
-| option | 本示例 | 说明 |
-| --- | --- | --- |
-| `mutationFn` | `createTag` | 必填。接收 `mutate(variables)` 传入的变量，必须 throw 失败 |
-| `onSuccess` | 重置表单 + 失效列表 | 签名：`(data, variables, onMutateResult, context)`。返回 Promise 会被 await |
-| `retry` | 走项目默认 `0` | 不要给创建/删除开重试 |
+
+| option       | 本示例         | 说明                                                                  |
+| ------------ | ----------- | ------------------------------------------------------------------- |
+| `mutationFn` | `createTag` | 必填。接收 `mutate(variables)` 传入的变量，必须 throw 失败                         |
+| `onSuccess`  | 重置表单 + 失效列表 | 签名：`(data, variables, onMutateResult, context)`。返回 Promise 会被 await |
+| `retry`      | 走项目默认 `0`   | 不要给创建/删除开重试                                                         |
+
 
 hook 级 `onSuccess` 每次成功都跑。`mutate(vars, { onSuccess })` 只绑这一次调用；
 并发多次时，**只有最后一次** 的 per-call 回调会触发。页面级同步缓存放 hook 回调，
@@ -966,16 +990,18 @@ hook 级 `onSuccess` 每次成功都跑。`mutate(vars, { onSuccess })` 只绑�
 
 **返回值（标签页该读的）**
 
-| 字段 | 用途 |
-| --- | --- |
-| `mutate` | 事件回调里触发，返回 `void` |
-| `mutateAsync` | 需要 `await` 创建结果时用，失败会 reject |
-| `isPending` | 禁用提交按钮、显示「创建中...」 |
-| `isError` / `error` | 表单下方展示 `ApiError.message` |
-| `reset` | 清掉这次 mutation 的 `data` / `error`，回到 `idle` |
-| `data` | 最近一次成功返回的 `Tag`；本表单没用，因为成功后立刻失效列表 |
-| `variables` | 最近一次传入的 `TagWriteInput`；失败回填时偶用 |
-| `status` | `idle` → `pending` → `success` / `error` |
+
+| 字段                  | 用途                                         |
+| ------------------- | ------------------------------------------ |
+| `mutate`            | 事件回调里触发，返回 `void`                          |
+| `mutateAsync`       | 需要 `await` 创建结果时用，失败会 reject               |
+| `isPending`         | 禁用提交按钮、显示「创建中...」                          |
+| `isError` / `error` | 表单下方展示 `ApiError.message`                  |
+| `reset`             | 清掉这次 mutation 的 `data` / `error`，回到 `idle` |
+| `data`              | 最近一次成功返回的 `Tag`；本表单没用，因为成功后立刻失效列表          |
+| `variables`         | 最近一次传入的 `TagWriteInput`；失败回填时偶用            |
+| `status`            | `idle` → `pending` → `success` / `error`   |
+
 
 Mutation 没有 `queryKey`，成功后不会自动更新列表。下一步靠 `invalidateQueries`。
 
@@ -988,6 +1014,8 @@ Mutation 没有 `queryKey`，成功后不会自动更新列表。下一步靠 `i
 
 ---
 
+
+
 ## 7. Mutation 成功后如何同步缓存
 
 创建标签后，服务端列表已经改变，但旧列表缓存仍然存在。推荐流程：
@@ -999,6 +1027,8 @@ mutation 成功
   → 当前活跃列表重新请求
   → 页面得到服务端权威排序和分页结果
 ```
+
+
 
 ### 7.1 失效范围
 
@@ -1028,13 +1058,15 @@ queryClient.invalidateQueries({
 `invalidateQueries` 做两件事：先把匹配到的查询标成 stale（覆盖 `staleTime`），再按
 `refetchType` 决定要不要立刻重取。
 
-| filter | 本示例 | 作用 |
-| --- | --- | --- |
-| `queryKey` | `tagKeys.lists()` → `['tags', 'list']` | 默认前缀匹配。第 1 页、第 2 页、带 keyword 的列表都会命中 |
-| `exact` | 当前筛选那次写成 `true` | 只打这一组完整 key，其它分页不受影响 |
-| `refetchType` | 未写，默认 `'active'` | `'active'` 只重取屏幕上的查询；`'none'` 只标 stale 不发请求；`'all'` 连 inactive 也立刻重取 |
-| `type` | 未写，默认 `'all'` | 决定**哪些查询被标 stale**。和 `refetchType` 不是一回事 |
-| `predicate` | 未用 | `(query) => boolean`，前缀表达不了时再手写 |
+
+| filter        | 本示例                                    | 作用                                                                   |
+| ------------- | -------------------------------------- | -------------------------------------------------------------------- |
+| `queryKey`    | `tagKeys.lists()` → `['tags', 'list']` | 默认前缀匹配。第 1 页、第 2 页、带 keyword 的列表都会命中                                 |
+| `exact`       | 当前筛选那次写成 `true`                        | 只打这一组完整 key，其它分页不受影响                                                 |
+| `refetchType` | 未写，默认 `'active'`                       | `'active'` 只重取屏幕上的查询；`'none'` 只标 stale 不发请求；`'all'` 连 inactive 也立刻重取 |
+| `type`        | 未写，默认 `'all'`                          | 决定**哪些查询被标 stale**。和 `refetchType` 不是一回事                             |
+| `predicate`   | 未用                                     | `(query) => boolean`，前缀表达不了时再手写                                      |
+
 
 标签 CRUD 推荐 `tagKeys.lists()` + 默认 `refetchType: 'active'`：当前页立刻刷新，
 用户没打开的其它分页只标 stale，下次进入再取。
@@ -1072,6 +1104,8 @@ onSuccess: () => {
 }
 ```
 
+
+
 ### 7.3 什么时候使用 setQueryData
 
 接口返回完整新实体，且能够准确定位缓存时，可以直接更新：
@@ -1103,7 +1137,11 @@ queryClient.setQueryData(
 
 ---
 
+
+
 ## 8. 新鲜度、回收和默认刷新
+
+
 
 ### 8.1 staleTime
 
@@ -1145,11 +1183,13 @@ gcTime：无人使用后，内存里最多保留多久
 这三个 option 类型相同：`boolean | 'always' | ((query) => boolean | 'always')`。
 浏览器默认都是 `true`（数据已 stale 才刷新）；`'always'` 会忽略 stale，每次都刷。
 
-| option | 默认 | 本文 | 标签页含义 |
-| --- | --- | --- | --- |
-| `refetchOnMount` | `true` | 未改 | 重新进入标签页时，若列表已 stale 就后台刷新 |
-| `refetchOnWindowFocus` | `true` | **`false`** | 切回浏览器窗口不自动刷。后台管理切来切去太频繁 |
-| `refetchOnReconnect` | `true` | 未改 | 网络从断线恢复后，stale 列表会刷新 |
+
+| option                 | 默认     | 本文      | 标签页含义                     |
+| ---------------------- | ------ | ------- | ------------------------- |
+| `refetchOnMount`       | `true` | 未改      | 重新进入标签页时，若列表已 stale 就后台刷新 |
+| `refetchOnWindowFocus` | `true` | `false` | 切回浏览器窗口不自动刷。后台管理切来切去太频繁   |
+| `refetchOnReconnect`   | `true` | 未改      | 网络从断线恢复后，stale 列表会刷新      |
+
 
 本文全局关闭了 `refetchOnWindowFocus`，但保留挂载和重连策略。
 如果后台业务要求切回页面立即确认最新数据，应删除该配置，而不是在组件中手写 effect。
@@ -1160,6 +1200,8 @@ gcTime：无人使用后，内存里最多保留多久
 本步未用：`refetchInterval`（轮询）。后台列表用失效重取，不要对标签页做定时刷。
 
 ---
+
+
 
 ## 9. 条件查询、取消和 initialData
 
@@ -1191,7 +1233,7 @@ queryFn: ({ signal }) => listTags(query, signal)
 
 - HTTP 层不消费 signal：组件卸载后 Promise 默认仍可完成，结果可以写入缓存；
 - HTTP 层把 signal 传给 `fetch` 或 Axios：查询失活或手动取消时，底层请求会中止，
-  Query 状态回退到请求前状态。
+Query 状态回退到请求前状态。
 
 页面不需要再维护 `cancelled` 布尔值。
 
@@ -1203,7 +1245,7 @@ v5 里两者最大的差别是：**占位不算成功，初始数据算成功并
 
 - 只供当前 observer 临时显示；
 - 不作为真实结果持久写入对应 key 的缓存；
-- 查询仍处于 **`pending`**，不是 `success`（v4 曾表现为 success，v5 改了）；
+- 查询仍处于 `pending`，不是 `success`（v4 曾表现为 success，v5 改了）；
 - 通过 `isPlaceholderData` 判断；
 - 函数形式会收到 `(previousData, previousQuery)`；`keepPreviousData` 就是官方封装。
 
@@ -1219,6 +1261,8 @@ v5 里两者最大的差别是：**占位不算成功，初始数据算成功并
 `placeholderData: keepPreviousData`，首次骨架用 `isPending && !isPlaceholderData`。
 
 ---
+
+
 
 ## 10. 最小测试
 
@@ -1269,12 +1313,16 @@ pnpm exec vitest run src/features/tag/queries.test.ts
 - 用户可观察到的最终行为。
 
 完整的 jsdom 和 Testing Library 配置见
-[`06-learn-vitest.md`](./06-learn-vitest.md)。Vitest 测试无需为了 Jest 的退出提示设置
+`[06-learn-vitest.md](./06-learn-vitest.md)`。Vitest 测试无需为了 Jest 的退出提示设置
 `gcTime: Infinity`；只需要关闭查询重试，避免错误用例等待重试超时。
 
 ---
 
+
+
 ## 11. 验证与排错
+
+
 
 ### 11.1 验证命令
 
@@ -1294,7 +1342,11 @@ pnpm dev
 - React Query Devtools 能看到 `['tags', 'list', ...]`；
 - 创建、切换状态、删除后列表自动同步。
 
+
+
 ### 11.2 常见错误
+
+
 
 #### 请求返回 HTML，解析 JSON 失败
 
@@ -1341,19 +1393,23 @@ pnpm dev
 
 ---
 
+
+
 ## 12. 快速上手总结
+
+
 
 ### 12.1 必须掌握的 API
 
 - `new QueryClient({ defaultOptions })`：全应用一份缓存。本文覆盖 `staleTime: 30_000`、
-  `retry: 1`、`refetchOnWindowFocus: false`、`mutations.retry: 0`。
+`retry: 1`、`refetchOnWindowFocus: false`、`mutations.retry: 0`。
 - `QueryClientProvider client={queryClient}`：注入模块单例；不要在 render 里 `new`。
 - `queryOptions({ queryKey, queryFn })`：把缓存地址和请求函数绑在一起，页面只订阅。
 - `useQuery(options)`：订阅读取。本页 spread `tagQueries.list(query)`，再盖
-  `placeholderData: keepPreviousData`。
+`placeholderData: keepPreviousData`。
 - `queryFn({ signal })`：必须 throw，禁止返回 `undefined` 或 `catch` 后返回 `[]`。
 - `useMutation({ mutationFn, onSuccess })`：写操作。事件里用 `mutate`，要 `await` 用
-  `mutateAsync`。
+`mutateAsync`。
 - `useQueryClient()`：拿到当前 Provider 的 client，供 `invalidateQueries` 使用。
 - `invalidateQueries({ queryKey })`：前缀匹配标 stale，默认 `refetchType: 'active'`。
 - `status` × `fetchStatus`：先认两根轴，再记派生 boolean。
@@ -1363,6 +1419,8 @@ pnpm dev
 - `staleTime`：多久内 fresh。`Infinity` 仍可被 invalidate；`'static'` 连失效也不重取。
 - `gcTime`：inactive 后内存最多保留多久，浏览器默认 5 分钟。
 - `placeholderData` / `keepPreviousData`：v5 仍是 `pending`，不写入新 key 的缓存。
+
+
 
 ### 12.2 按需了解的 API
 
@@ -1392,6 +1450,8 @@ pnpm dev
 - 为不存在的后端接口设计 detail key 和预取；
 - 整段覆盖 `AppProviders` 时丢掉 `AntdApp`。
 
+
+
 ### 12.4 最小记忆
 
 ```text
@@ -1404,12 +1464,3 @@ isFetching 管当前请求（含后台刷新）
 服务端数据归 Query，客户端全局状态归 Zustand，局部交互归 useState
 ```
 
-### 12.5 下一步实践
-
-在当前标签页上继续完成两项小扩展：
-
-1. 将关键词输入改为“输入值 + 点击查询后提交”，避免每次按键请求；
-2. 使用 Testing Library 验证创建成功后列表出现新标签，而不是断言 Query 内部状态。
-   组件测试仍延后到 Step 16，现在先把行为记在验收清单里即可。
-
-不要切换到新的文章 Demo，也不要提前抽象万能 `useCrud`。
