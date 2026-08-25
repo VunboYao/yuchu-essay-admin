@@ -1,6 +1,6 @@
 import styles from './TagPage.module.css'
 import { PageHeader, AppFormDialog, QueryState, type QueryStateEnum } from '@/shared/ui'
-import { Button, Input, Select, Table, type TableProps, Tag, App, Popconfirm } from 'antd'
+import { Alert, Button, Input, Select, Table, type TableProps, Tag, App, Popconfirm } from 'antd'
 import { useState } from 'react'
 import { TagForm } from '../components/TagForm'
 import { useForm } from 'react-hook-form'
@@ -181,7 +181,7 @@ export function Component() {
     },
   ]
 
-  // QueryState 只管整页四态；后台刷新的提示用下面两个开关，不要把 status 打回 pending。
+  // QueryState 只管整页四态；后台刷新用 Table overlay，不要把 status 打回 pending。
   let queryStatus: QueryStateEnum = 'success'
   // v5 + keepPreviousData：翻页时新 key 仍是 isPending，data 只是上一页占位。
   // 首次进页面,无缓存: 必须排除 isPlaceholderData，否则翻页会闪整页 Skeleton。
@@ -195,9 +195,6 @@ export function Component() {
     queryStatus = 'empty'
   }
 
-  // 已有真实成功数据后的后台刷新（= isRefetching）。翻页占位时 v5 仍是 isPending，故意不亮。
-  const showFetchingHint = Boolean(listQuery.data && listQuery.isFetching && !listQuery.isPending)
-  // 刷新失败但上一份 data 还在：表格继续画，只在上方提示。
   const showFetchError = Boolean(listQuery.data && listQuery.isRefetchError)
 
   return (
@@ -231,22 +228,32 @@ export function Component() {
           errorText={listQuery.error instanceof ApiError ? listQuery.error.message : '加载失败'}
           emptyText="暂无标签"
         >
-          {showFetchingHint ? <p className={styles.fetchingHint}>数据同步中</p> : null}
-          {showFetchError ? <p className={styles.fetchError}>数据同步失败</p> : null}
-          <Table
-            rowKey="id"
-            columns={columns}
-            dataSource={listQuery?.data?.list}
-            pagination={{
-              placement: ['bottomEnd'],
-              current: query.page,
-              pageSize: query.pageSize,
-              total: listQuery?.data?.total,
-              showTotal: (total) => `共 ${total} 条`,
-              showSizeChanger: false,
-              onChange: (page) => setQuery((prev) => ({ ...prev, page })),
-            }}
-          />
+          <div className={styles.tableBlock}>
+            {showFetchError ? (
+              <Alert
+                type="error"
+                showIcon
+                title={
+                  listQuery.error instanceof ApiError ? listQuery.error.message : '数据同步失败'
+                }
+              />
+            ) : null}
+            <Table
+              rowKey="id"
+              columns={columns}
+              dataSource={listQuery?.data?.list}
+              loading={{ spinning: listQuery.isFetching, delay: 200 }}
+              pagination={{
+                placement: ['bottomEnd'],
+                current: query.page,
+                pageSize: query.pageSize,
+                total: listQuery?.data?.total,
+                showTotal: (total) => `共 ${total} 条`,
+                showSizeChanger: false,
+                onChange: (page) => setQuery((prev) => ({ ...prev, page })),
+              }}
+            />
+          </div>
         </QueryState>
       </div>
 

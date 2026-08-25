@@ -12,18 +12,10 @@
   width: 160px;
 }
 
-.fetchingHint {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: rgba(0, 0, 0, 0.45);
-}
-
-.fetchError {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #ff4d4f;
+.tableBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .rowActions {
