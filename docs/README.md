@@ -12,6 +12,7 @@
 | 09 | [Step 3 Auth 引导式开发](./09-step3-auth引导式开发.md) | 完成路由与 Layout 后，按检查点实现登录态闭环。检查点 0 / 7（测试）暂缓 |
 | 10 | [Step 4 HTTP 引导式开发](./10-step4-http引导式开发.md) | Step 3 通过后，按检查点实现 ApiError、axios 客户端与真登录。对照源为 01 契约 + 后端 API，不读 `Admin/src`。检查点 7（测试）暂缓 |
 | 11 | [Step 5 Shared 引导式开发](./11-step5-shared引导式开发.md) | Step 4 通过后，按检查点挂 QueryClient、做 Dialog / QueryState。对照源为 01 契约 + TanStack / antd 官方 API，不读 `Admin/src`。禁止演示 GET |
+| 12 | [Step 6 标签引导式开发](./12-step6-tag引导式开发.md) | Step 5 通过后，按检查点把标签页收成第一条 Query CRUD。对照源为后端契约 + 01 + 本仓库 shared UI，不读 `Admin/src`。禁止 `useCrud` |
 | — | [Zod 与 RHF](./learn-zod-rhf.md) | 通用说明：两库独立、职责、接线；不是契约 |
 | — | [Zod 与 Vitest](./learn-vitest-zod.md) | 对照本项目的学习笔记；不是契约 |
 | — | [前端项目格式化配置指南](./前端项目格式化配置指南.md) | 复制 Prettier、EditorConfig 与工作区配置时查阅 |

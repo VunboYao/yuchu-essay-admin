@@ -1,16 +1,37 @@
 .root {
   display: flex;
+  flex-direction: column;
+}
+
+.top {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px 24px;
   flex-wrap: wrap;
-  margin: 0 0 20px;
+}
+
+.top:has(.description) {
+  align-items: flex-start;
+}
+
+/* 纯标题：底部分割线，和内容区分开 */
+.root:not(:has(.filters)) {
   padding: 0 0 16px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.root:has(.description) {
-  align-items: flex-start;
+/* 标题 + 筛选：收成一块控制区 */
+.root:has(.filters) {
+  padding: 16px 20px;
+  background: #f7f8fa;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+}
+
+.root:has(.filters) .top {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .main {
@@ -39,4 +60,12 @@
   align-items: center;
   gap: 8px;
   margin-left: auto;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
 }
