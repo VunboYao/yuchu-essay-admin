@@ -7,11 +7,10 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { tagWriteSchema, type TagWriteInput, type TagWriteOutput } from '../schemas'
 import { createTag, updateTag, deleteTag, type TagListQuery } from '../api'
-import { STATUS_OPTIONS } from '@/shared/constants/options'
+import { STATUS_OPTIONS, statusLabel } from '@/shared/constants/options'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { tagKeys, tagQueries } from '../queries'
 import type { Tag as TagType } from '@/shared/types'
-import { statusLabel } from '@/shared/constants/options'
 import { ApiError } from '@/shared/api/api-error'
 
 const createDefaults = {
@@ -52,6 +51,7 @@ export function Component() {
   const createMutation = useMutation({
     mutationFn: createTag,
     onSuccess: () => {
+      // "标记过期 + 自动重取"
       queryClient.invalidateQueries({ queryKey: tagKeys.lists() })
     },
   })
@@ -184,10 +184,11 @@ export function Component() {
   // QueryState 只管整页四态；后台刷新用 Table overlay，不要把 status 打回 pending。
   let queryStatus: QueryStateEnum = 'success'
   // v5 + keepPreviousData：翻页时新 key 仍是 isPending，data 只是上一页占位。
-  // 首次进页面,无缓存: 必须排除 isPlaceholderData，否则翻页会闪整页 Skeleton。
+  // 首次进页面,无缓存: 必须排除 isPlaceholderData，否则翻页会闪整页 Skeleton。(pending 整页加载（无任何数据可借）)
   if (listQuery.isPending && !listQuery.isPlaceholderData) {
     queryStatus = 'pending'
   } else if (!listQuery.data && listQuery.isError) {
+    // error 整页失败（首次就挂了）
     // 首次失败才整页 error。刷新失败时 data 还在，不能只看 isError。
     queryStatus = 'error'
   } else if (listQuery.data?.list.length === 0) {
