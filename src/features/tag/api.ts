@@ -1,4 +1,4 @@
-import { del, get, post, put } from '@/shared/api/http'
+import { del, get, post, put } from '@/shared/api'
 import type { PageData, Tag } from '@/shared/types'
 import type { EnableStatus } from '@/shared/constants/options'
 import type { TagWriteOutput } from './schemas'

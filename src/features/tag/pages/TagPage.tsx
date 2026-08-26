@@ -11,7 +11,7 @@ import { STATUS_OPTIONS, statusLabel } from '@/shared/constants/options'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { tagKeys, tagQueries } from '../queries'
 import type { Tag as TagType } from '@/shared/types'
-import { ApiError } from '@/shared/api/api-error'
+import { ApiError } from '@/shared/api'
 
 const createDefaults = {
   name: '',

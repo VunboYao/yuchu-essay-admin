@@ -8,7 +8,7 @@ export function TagForm({
   errors,
 }: {
   control: Control<TagWriteInput>
-  errors: FieldErrors<TagWriteOutput>
+  errors: FieldErrors<TagWriteInput>
 }) {
   return (
     <Form

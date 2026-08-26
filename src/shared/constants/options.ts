@@ -27,14 +27,14 @@ export const SEMESTER_OPTIONS = [
 
 export type Semester = (typeof SEMESTER_OPTIONS)[number]['value']
 
-const GRADES = [1, 2, 3, 4, 5, 6] as const
+export const GRADES = [1, 2, 3, 4, 5, 6] as const
 export type Grade = (typeof GRADES)[number]
 export const GRADE_OPTIONS: SelectOption<Grade>[] = GRADES.map((g) => ({
   label: `${g}年级`,
   value: g,
 }))
 
-const UNITS = [1, 2, 3, 4, 5, 6, 7, 8] as const
+export const UNITS = [1, 2, 3, 4, 5, 6, 7, 8] as const
 export type Unit = (typeof UNITS)[number]
 export const UNIT_OPTIONS: SelectOption<Unit>[] = UNITS.map((u) => ({
   label: `第${u}单元`,
