@@ -1,4 +1,4 @@
-import { get, post, put } from '@/shared/api'
+import { del, get, post, put } from '@/shared/api'
 import type { TaxonomyUnit, PageData } from '@/shared/types'
 import type { EnableStatus, Grade, Semester } from '@/shared/constants/options'
 import type { TaxonomyUnitWriteOutput } from './schemas'
@@ -40,4 +40,8 @@ export function updateTaxonomyUnit(options: {
   input: TaxonomyUnitWriteOutput
 }): Promise<TaxonomyUnit> {
   return put<TaxonomyUnit>(`/taxonomy-units/${options.id}`, options.input)
+}
+
+export function deleteTaxonomyUnit(id: number): Promise<{ id: number }> {
+  return del<{ id: number }>(`/taxonomy-units/${id}`)
 }

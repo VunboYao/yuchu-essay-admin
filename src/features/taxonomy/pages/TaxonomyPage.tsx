@@ -15,12 +15,17 @@ import {
   STATUS_OPTIONS,
   UNIT_OPTIONS,
 } from '@/shared/constants/options'
-import { Tag, Button, Table, Alert, Select, App, type TableProps } from 'antd'
+import { Tag, Button, Table, Alert, Select, App, Popconfirm, type TableProps } from 'antd'
 import styles from './TaxonomyPage.module.css'
 import { PageHeader, QueryState, AppFormDialog, type QueryStateEnum } from '@/shared/ui'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { taxonomyUnitKeys, taxonomyUnitQueries } from '../queries'
-import { createTaxonomyUnit, updateTaxonomyUnit, type TaxonomyListQuery } from '../api'
+import {
+  createTaxonomyUnit,
+  updateTaxonomyUnit,
+  deleteTaxonomyUnit,
+  type TaxonomyListQuery,
+} from '../api'
 import { ApiError } from '@/shared/api'
 
 const initialValues: TaxonomyUnitWriteInput = {
@@ -71,6 +76,14 @@ export function Component() {
       queryClient.invalidateQueries({ queryKey: taxonomyUnitKeys.lists() })
     },
   })
+  const deleteMutation = useMutation({
+    mutationFn: deleteTaxonomyUnit,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: taxonomyUnitKeys.lists() })
+    },
+  })
+
+  const actionsLocked = updateMutation.isPending || deleteMutation.isPending
 
   let queryStatus: QueryStateEnum = 'success'
   if (listQuery.isPending && !listQuery.isPlaceholderData) {
@@ -118,6 +131,37 @@ export function Component() {
     setFormOpen(true)
   }
 
+  const handleToggleStatus = (record: TaxonomyUnit) => {
+    updateMutation.mutate(
+      {
+        id: record.id,
+        input: {
+          textbookVersion: record.textbookVersion,
+          grade: record.grade,
+          semester: record.semester,
+          unit: record.unit,
+          unitTitle: record.unitTitle,
+          sortOrder: record.sortOrder,
+          status: record.status === 1 ? 0 : 1,
+        },
+      },
+      {
+        onError: (error) => {
+          message.error(error instanceof ApiError ? error.message : '操作失败')
+        },
+      },
+    )
+  }
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteMutation.mutateAsync(id)
+      message.success('删除成功')
+    } catch (error) {
+      message.error(error instanceof ApiError ? error.message : '删除失败')
+    }
+  }
+
   const columns: TableProps<TaxonomyUnit>['columns'] = [
     {
       title: '教材版本',
@@ -158,8 +202,30 @@ export function Component() {
       title: '操作',
       dataIndex: 'action',
       render: (_, record) => (
-        <div className={styles.rowActions} onClick={() => handleEdit(record)}>
-          <Button type="link">编辑</Button>
+        <div className={styles.rowActions}>
+          <Button type="link" disabled={actionsLocked} onClick={() => handleEdit(record)}>
+            编辑
+          </Button>
+          <Button type="link" disabled={actionsLocked} onClick={() => handleToggleStatus(record)}>
+            {record.status === 1 ? '禁用' : '启用'}
+          </Button>
+          {record.status === 1 ? (
+            <Button type="link" disabled title="请先禁用再删除">
+              删除
+            </Button>
+          ) : (
+            <Popconfirm
+              title="确定删除该分类单元？删除后不可恢复。"
+              onConfirm={() => handleDelete(record.id)}
+              okText="确定"
+              cancelText="取消"
+              disabled={actionsLocked}
+            >
+              <Button type="link" danger disabled={actionsLocked}>
+                删除
+              </Button>
+            </Popconfirm>
+          )}
         </div>
       ),
     },
