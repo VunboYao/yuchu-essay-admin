@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tag 模块 · 数据流闭环关系图</title>
+</head>
+<body style="margin:0;padding:0;background:#F4F3EE;">
+<div style="background-color:transparent;box-sizing:border-box;font-family:'PingFang SC','Roboto','Segoe UI',Arial,sans-serif;color:#1A1B1C;max-width:880px;margin:0 auto;padding:16px;">
+  <div style="padding:2px 2px 0;">
+    <div style="font-size:18px;font-weight:600;">Tag 模块 · 数据流闭环</div>
+    <div style="font-size:12px;color:#6B7280;margin-top:2px;">Zod 校验契约 × React Hook Form 表单状态 × React Query 服务端状态 · 对应 docs/12-step6-tag、08-learn-tanstack-query、05-learn-zod-rhf</div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 2px;">
+    <button data-flow="query" class="fb" style="min-height:44px;padding:0 16px;border-radius:10px;border:1.5px solid #E4E3DD;background:#fff;color:#1A1B1C;font-size:13px;cursor:pointer;">查询流程</button>
+    <button data-flow="create" class="fb" style="min-height:44px;padding:0 16px;border-radius:10px;border:1.5px solid #E4E3DD;background:#fff;color:#1A1B1C;font-size:13px;cursor:pointer;">新建流程</button>
+    <button data-flow="edit" class="fb" style="min-height:44px;padding:0 16px;border-radius:10px;border:1.5px solid #E4E3DD;background:#fff;color:#1A1B1C;font-size:13px;cursor:pointer;">编辑流程</button>
+    <button data-flow="delete" class="fb" style="min-height:44px;padding:0 16px;border-radius:10px;border:1.5px solid #E4E3DD;background:#fff;color:#1A1B1C;font-size:13px;cursor:pointer;">删除流程</button>
+  </div>
+
+  <div style="font-size:11px;color:#6B7280;margin:8px 2px 2px;">图例：粗边框节点 = 当前流程路径；泳道按职责分层；下方回环线表达「写成功后自动刷新列表」的闭环</div>
+
+  <div style="font-size:11px;color:#6B7280;margin:12px 2px 2px;font-weight:600;">▍泳道 1 · 用户操作 UI</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <div data-flows="query,create,edit,delete" style="flex:1 1 200px;min-width:0;border:2px solid #E4E3DD;border-radius:12px;padding:8px 10px;background:#fff;box-sizing:border-box;transition:all .15s;">
+      <div style="font-size:13px;font-weight:600;">TagPage 列表页</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px;">useQuery + Table · 搜索 · 分页 · QueryState 四态</div>
+    </div>
+    <div data-flows="create,edit" style="flex:1 1 200px;min-width:0;border:2px solid #E4E3DD;border-radius:12px;padding:8px 10px;background:#fff;box-sizing:border-box;transition:all .15s;">
+      <div style="font-size:13px;font-weight:600;">TagForm 弹窗</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px;">AppFormDialog + Controller 包裹 antd 受控组件</div>
+    </div>
+  </div>
+  <div style="text-align:center;color:#6B7280;font-size:11px;margin:4px 0;">↓ 提交 handleSubmit / 编辑时 openEdit→reset 回填</div>
+
+  <div style="font-size:11px;color:#6B7280;margin:12px 2px 2px;font-weight:600;">▍泳道 2 · 表单 + 校验契约</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <div data-flows="create,edit" style="flex:1 1 200px;min-width:0;border:2px solid #E4E3DD;border-radius:12px;padding:8px 10px;background:#fff;box-sizing:border-box;transition:all .15s;">
+      <div style="font-size:13px;font-weight:600;">useForm + zodResolver</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px;">tagWriteSchema · TagWriteInput → safeParse → TagWriteOutput</div>
+    </div>
+  </div>
+  <div style="text-align:center;color:#6B7280;font-size:11px;margin:4px 0;">↓ onValid(input: TagWriteOutput)</div>
+
+  <div style="font-size:11px;color:#6B7280;margin:12px 2px 2px;font-weight:600;">▍泳道 3 · React Query 数据层</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <div data-flows="query,create,edit,delete" style="flex:1 1 160px;min-width:0;border:2px solid #E4E3DD;border-radius:12px;padding:8px 10px;background:#fff;box-sizing:border-box;transition:all .15s;">
+      <div style="font-size:13px;font-weight:600;">useQuery 列表</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px;">tagQueries.list(query) · keepPreviousData 占位</div>
+    </div>
+    <div data-flows="create,edit,delete" style="flex:1 1 160px;min-width:0;border:2px solid #E4E3DD;border-radius:12px;padding:8px 10px;background:#fff;box-sizing:border-box;transition:all .15s;">
+      <div style="font-size:13px;font-weight:600;">useMutation ×3</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px;">create / update / delete · mutateAsync</div>
+    </div>
+    <div data-flows="create,edit,delete" style="flex:1 1 160px;min-width:0;border:2px solid #E4E3DD;border-radius:12px;padding:8px 10px;background:#fff;box-sizing:border-box;transition:all .15s;">
+      <div style="font-size:13px;font-weight:600;">tagKeys + invalidate</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px;">['tags','list',…] 前缀失效 · useQueryClient 单例</div>
+    </div>
+  </div>
+  <div style="text-align:center;color:#6B7280;font-size:11px;margin:4px 0;">↓ mutationFn → api 函数（GET / POST / PUT / DELETE）</div>
+
+  <div style="font-size:11px;color:#6B7280;margin:12px 2px 2px;font-weight:600;">▍泳道 4 · API 层</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <div data-flows="query,create,edit,delete" style="flex:1 1 200px;min-width:0;border:2px solid #E4E3DD;border-radius:12px;padding:8px 10px;background:#fff;box-sizing:border-box;transition:all .15s;">
+      <div style="font-size:13px;font-weight:600;">api.ts</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px;">listTags / createTag / updateTag / deleteTag · 参数清洗</div>
+    </div>
+  </div>
+  <div style="text-align:center;color:#6B7280;font-size:11px;margin:4px 0;">↓ HTTP 请求 / 响应 → PageData&lt;Tag&gt;</div>
+
+  <div style="font-size:11px;color:#6B7280;margin:12px 2px 2px;font-weight:600;">▍泳道 5 · 后端</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <div data-flows="query,create,edit,delete" style="flex:1 1 200px;min-width:0;border:2px solid #E4E3DD;border-radius:12px;padding:8px 10px;background:#fff;box-sizing:border-box;transition:all .15s;">
+      <div style="font-size:13px;font-weight:600;">REST /tags</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px;">GET 列表 · POST 新建 · PUT /:id 更新 · DELETE /:id 删除</div>
+    </div>
+  </div>
+
+  <div style="font-size:11px;color:#6B7280;margin:14px 2px 2px;font-weight:600;">▍闭环回环 · 写成功后自动刷新（invalidateQueries → refetch）</div>
+  <div id="chain" style="display:flex;flex-wrap:wrap;align-items:center;gap:2px;margin:6px 2px;min-height:44px;line-height:1.5;"></div>
+
+  <div id="detail" style="background:rgba(0,0,0,0.025);border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:12px 14px;margin:10px 2px 4px;box-sizing:border-box;min-height:60px;"></div>
+</div>
+
+<script>
+(function() {
+  try {
+    var COLOR = { query: '#9BBBF4', create: '#52C41A', edit: '#E8A33D', delete: '#EA6668' };
+    var DATA = {
+      query: {
+        title: '查询流程 · 读取列表',
+        chain: ['TagPage 挂载', 'useQuery(tagQueries.list)', 'listTags() → GET /tags', 'PageData 写入缓存', 'data.list 渲染 Table', '翻页/搜索 → 新 key + keepPreviousData 占位'],
+        steps: [
+          '① TagPage 挂载 useQuery({ ...tagQueries.list(query), placeholderData: keepPreviousData })',
+          '② queryKey = tagKeys.list(query) = ["tags","list",{...参数}]，queryFn 执行 listTags(query, signal)',
+          '③ api.ts 清洗参数后 GET /tags，返回 PageData<Tag> 写入 React Query 缓存',
+          '④ data.list 渲染表格；isPending && !isPlaceholderData 判首次加载 → QueryState pending/error/empty/success 四态',
+          '⑤ 翻页/搜索改变 query → 新 key 无缓存 → keepPreviousData 用旧数据占位（isPlaceholderData=true）',
+          '⑥ 新数据返回立即替换占位，整页不闪烁'
+        ]
+      },
+      create: {
+        title: '新建流程 · 表单 → 写库 → 自动刷新',
+        chain: ['点「新建标签」', 'reset 默认值 + 打开弹窗', 'TagForm 填写', 'handleSubmit → zodResolver 校验', 'onValid(TagWriteOutput)', 'createMutation.mutateAsync → POST /tags', 'onSuccess → invalidateQueries', 'refetch → 新标签出现在列表'],
+        steps: [
+          '① 点「新建标签」→ openCreate(): reset(createDefaults) 清空表单 + setOpen(true)',
+          '② TagForm 用 Controller 收集输入，值进入 useForm 的 state（受控）',
+          '③ 点提交 → handleSubmit → zodResolver(tagWriteSchema) 对当前值 safeParse；失败则 errors 映射到字段',
+          '④ 校验通过 → 回调收到已 trim 的 TagWriteOutput（z.output 类型）',
+          '⑤ onValid: await createMutation.mutateAsync(input) → POST /tags',
+          '⑥ 成功 → 定义级 onSuccess 执行 invalidateQueries(tagKeys.lists()) → 前缀匹配所有列表 key 标记 stale',
+          '⑦ 列表自动 refetch → 新标签出现 → 关闭弹窗，闭环完成'
+        ]
+      },
+      edit: {
+        title: '编辑流程 · 回填 → 修改 → 自动刷新',
+        chain: ['点「编辑」', 'openEdit: reset 回填 tag 数据', 'TagForm 修改', 'handleSubmit → zodResolver 校验', 'onValid(TagWriteOutput)', 'updateMutation.mutateAsync → PUT /tags/:id', 'onSuccess → invalidateQueries', 'refetch → 列表更新'],
+        steps: [
+          '① 点「编辑」→ openEdit(tag): reset({ name, sortOrder, status }) 回填表单',
+          '② 修改后提交 → zodResolver 校验通过 → onValid(input)',
+          '③ updateMutation.mutateAsync({ id, input }) → PUT /tags/:id',
+          '④ 成功 → 定义级 onSuccess → invalidateQueries(tagKeys.lists())',
+          '⑤ 列表 refetch → 更新后的行显示在表格中'
+        ]
+      },
+      delete: {
+        title: '删除流程 · 先禁用 → 确认 → 自动刷新',
+        chain: ['点「删除」（启用态禁用）', '先禁用 → 状态变 0', 'Popconfirm 确认', 'deleteMutation.mutateAsync(id)', 'DELETE /tags/:id', 'onSuccess → invalidateQueries', 'refetch → 列表移除该标签'],
+        steps: [
+          '① 业务约束：status=1 的标签删除按钮禁用，提示「请先禁用再删除」',
+          '② 先走「禁用」→ handleToggleStatus 用 updateMutation.mutate 切换 status=0',
+          '③ 禁用后点「删除」→ Popconfirm 二次确认',
+          '④ 确认 → handleDelete: await deleteMutation.mutateAsync(id) → DELETE /tags/:id',
+          '⑤ 成功 → 定义级 onSuccess → invalidateQueries(tagKeys.lists()) → refetch',
+          '⑥ 列表移除该标签，闭环完成'
+        ]
+      }
+    };
+    function render(f) {
+      var c = COLOR[f];
+      var btns = document.querySelectorAll('.fb');
+      for (var i = 0; i < btns.length; i++) {
+        var b = btns[i];
+        var on = b.getAttribute('data-flow') === f;
+        b.style.borderColor = on ? c : '#E4E3DD';
+        b.style.background = on ? c + '26' : '#fff';
+        b.style.fontWeight = on ? '600' : '500';
+      }
+      var nodes = document.querySelectorAll('[data-flows]');
+      for (var j = 0; j < nodes.length; j++) {
+        var n = nodes[j];
+        var has = (n.getAttribute('data-flows') || '').split(',').indexOf(f) > -1;
+        n.style.borderColor = has ? c : '#E4E3DD';
+        n.style.background = has ? c + '1f' : '#ffffff';
+        n.style.boxShadow = has ? '0 1px 5px ' + c + '55' : 'none';
+      }
+      var chain = document.getElementById('chain');
+      var detail = document.getElementById('detail');
+      if (!chain || !detail) return;
+      var d = DATA[f];
+      var chainHtml = '';
+      for (var k = 0; k < d.chain.length; k++) {
+        chainHtml += '<span style="display:inline-flex;align-items:center;flex-wrap:wrap;">' +
+          '<span style="background:#fff;border:1px solid ' + c + ';border-radius:8px;padding:5px 9px;font-size:12px;color:#1A1B1C;">' + d.chain[k] + '</span>' +
+          (k < d.chain.length - 1 ? '<span style="margin:0 3px;color:' + c + ';font-size:13px;">→</span>' : '') +
+          '</span>';
+      }
+      chain.innerHTML = chainHtml;
+      var stepHtml = '<div style="font-size:13px;font-weight:600;color:#1A1B1C;margin-bottom:6px;">' + d.title + '</div>';
+      for (var m = 0; m < d.steps.length; m++) {
+        stepHtml += '<div style="font-size:12.5px;color:#374151;line-height:1.7;margin:2px 0;">' + d.steps[m] + '</div>';
+      }
+      detail.innerHTML = stepHtml;
+    }
+    var btnsAll = document.querySelectorAll('.fb');
+    for (var i2 = 0; i2 < btnsAll.length; i2++) {
+      btnsAll[i2].addEventListener('click', function() { render(this.getAttribute('data-flow')); });
+    }
+    render('query');
+  } catch (e) { console.error(e); }
+})();
+</script>
+</body>
+</html>
