@@ -13,13 +13,14 @@ import {
   GRADE_OPTIONS,
   SEMESTER_OPTIONS,
   STATUS_OPTIONS,
+  UNIT_OPTIONS,
 } from '@/shared/constants/options'
 import { Tag, Button, Table, Alert, Select, App, type TableProps } from 'antd'
 import styles from './TaxonomyPage.module.css'
 import { PageHeader, QueryState, AppFormDialog, type QueryStateEnum } from '@/shared/ui'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { taxonomyUnitKeys, taxonomyUnitQueries } from '../queries'
-import { createTaxonomyUnit, updateTaxonomyUnit, type getTaxonomyUnitsList } from '../api'
+import { createTaxonomyUnit, updateTaxonomyUnit, type TaxonomyListQuery } from '../api'
 import { ApiError } from '@/shared/api'
 
 const initialValues: TaxonomyUnitWriteInput = {
@@ -37,7 +38,7 @@ export function Component() {
   const queryClient = useQueryClient()
   const [editing, setEditing] = useState<TaxonomyUnit | null>(null)
   const { message } = App.useApp()
-  const [query, setQuery] = useState<getTaxonomyUnitsList>({
+  const [query, setQuery] = useState<TaxonomyListQuery>({
     page: 1,
     pageSize: 10,
     grade: '',
@@ -64,7 +65,6 @@ export function Component() {
       queryClient.invalidateQueries({ queryKey: taxonomyUnitKeys.lists() })
     },
   })
-
   const createMutation = useMutation({
     mutationFn: createTaxonomyUnit,
     onSuccess: () => {
@@ -120,16 +120,13 @@ export function Component() {
 
   const columns: TableProps<TaxonomyUnit>['columns'] = [
     {
-      title: '索引',
-      render: (_, __, index) => (query.page - 1) * query.pageSize + index + 1,
-    },
-    {
       title: '教材版本',
       dataIndex: 'textbookVersion',
     },
     {
       title: '年级',
       dataIndex: 'grade',
+      render: (text) => GRADE_OPTIONS.find((option) => option.value === text)?.label,
     },
     {
       title: '册次',
@@ -138,6 +135,7 @@ export function Component() {
     {
       title: '单元',
       dataIndex: 'unit',
+      render: (text) => UNIT_OPTIONS.find((option) => option.value === text)?.label,
     },
     {
       title: '单元标题',
@@ -151,6 +149,10 @@ export function Component() {
       title: '状态',
       dataIndex: 'status',
       render: (text) => <Tag color={text === 1 ? 'green' : 'red'}>{statusLabel(text)}</Tag>,
+    },
+    {
+      title: '更新时间',
+      dataIndex: 'updatedAt',
     },
     {
       title: '操作',
@@ -169,31 +171,38 @@ export function Component() {
           title="教材分类"
           extra={
             <Button type="primary" onClick={handleCreate}>
-              新建
+              新建单元
             </Button>
           }
         >
           <Select
             placeholder="请选择年级"
-            options={[...GRADE_OPTIONS]}
+            options={[{ label: '全部', value: '' }, ...GRADE_OPTIONS]}
             className={styles.grade}
-            onChange={(value) => setQuery((prev) => ({ ...prev, grade: value }))}
+            value={query.grade}
+            onChange={(value) => setQuery((prev) => ({ ...prev, grade: value, page: 1 }))}
           />
           <Select
             placeholder="请选择册次"
-            options={[...SEMESTER_OPTIONS]}
+            options={[{ label: '全部', value: '' }, ...SEMESTER_OPTIONS]}
             className={styles.semester}
-            onChange={(value) => setQuery((prev) => ({ ...prev, semester: value }))}
+            value={query.semester}
+            onChange={(value) => setQuery((prev) => ({ ...prev, semester: value, page: 1 }))}
           />
           <Select
             placeholder="请选择状态"
-            options={[...STATUS_OPTIONS]}
+            options={[{ label: '全部', value: '' }, ...STATUS_OPTIONS]}
             className={styles.status}
-            onChange={(value) => setQuery((prev) => ({ ...prev, status: value }))}
+            value={query.status}
+            onChange={(value) => setQuery((prev) => ({ ...prev, status: value, page: 1 }))}
           />
         </PageHeader>
 
-        <QueryState status={queryStatus} errorText="加载失败" emptyText="暂无教材分类">
+        <QueryState
+          status={queryStatus}
+          errorText={listQuery.error instanceof ApiError ? listQuery.error.message : '加载失败'}
+          emptyText="暂无教材分类"
+        >
           <div className={styles.tableBlock}>
             {showFetchError ? (
               <Alert

@@ -3,7 +3,7 @@ import type { TaxonomyUnit, PageData } from '@/shared/types'
 import type { EnableStatus, Grade, Semester } from '@/shared/constants/options'
 import type { TaxonomyUnitWriteOutput } from './schemas'
 
-export type getTaxonomyUnitsList = {
+export type TaxonomyListQuery = {
   grade: Grade | ''
   semester: Semester | ''
   status: EnableStatus | ''
@@ -11,7 +11,7 @@ export type getTaxonomyUnitsList = {
   pageSize: number
 }
 
-function toTaxonomyUnitsListParams(query: getTaxonomyUnitsList) {
+function toTaxonomyUnitsListParams(query: TaxonomyListQuery) {
   return {
     grade: query.grade === '' ? undefined : query.grade,
     semester: query.semester === '' ? undefined : query.semester,
@@ -22,7 +22,7 @@ function toTaxonomyUnitsListParams(query: getTaxonomyUnitsList) {
 }
 
 export function listTaxonomyUnits(
-  query: getTaxonomyUnitsList,
+  query: TaxonomyListQuery,
   signal?: AbortSignal,
 ): Promise<PageData<TaxonomyUnit>> {
   return get<PageData<TaxonomyUnit>>('/taxonomy-units', {

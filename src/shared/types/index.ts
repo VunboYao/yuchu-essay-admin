@@ -53,7 +53,6 @@ export interface TaxonomyUnit {
   status: EnableStatus
   createdAt: string
   updatedAt: string
-  index?: number
 }
 
 export interface Tag {

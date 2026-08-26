@@ -2,11 +2,7 @@ import { z } from 'zod'
 import { GRADES, UNITS } from '@/shared/constants/options'
 
 export const taxonomyUnitWriteSchema = z.object({
-  textbookVersion: z
-    .string()
-    .trim()
-    .min(1, { message: '请输入教材版本' })
-    .max(40, { message: '教材版本不能超过40个字符' }),
+  textbookVersion: z.string().trim().max(40, { message: '教材版本不能超过40个字符' }),
   grade: z.literal(GRADES, { message: '请选择年级' }),
   semester: z.union([z.literal('上册'), z.literal('下册')]),
   unit: z.literal(UNITS, { message: '请选择单元' }),

@@ -1,5 +1,5 @@
 import { Controller, type Control, type FieldErrors } from 'react-hook-form'
-import { type TagWriteInput, type TagWriteOutput } from '../schemas'
+import { type TagWriteInput } from '../schemas'
 import { Form, Input, InputNumber, Radio } from 'antd'
 import { STATUS_OPTIONS } from '@/shared/constants/options'
 

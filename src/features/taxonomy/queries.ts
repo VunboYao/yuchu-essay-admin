@@ -1,14 +1,14 @@
 import { queryOptions } from '@tanstack/react-query'
-import { listTaxonomyUnits, type getTaxonomyUnitsList } from './api'
+import { listTaxonomyUnits, type TaxonomyListQuery } from './api'
 
 export const taxonomyUnitKeys = {
-  all: ['taxonomyUnits'] as const,
+  all: ['taxonomy-units'] as const,
   lists: () => [...taxonomyUnitKeys.all, 'list'] as const,
-  list: (query: getTaxonomyUnitsList) => [...taxonomyUnitKeys.lists(), query] as const,
+  list: (query: TaxonomyListQuery) => [...taxonomyUnitKeys.lists(), query] as const,
 }
 
 export const taxonomyUnitQueries = {
-  list: (query: getTaxonomyUnitsList) =>
+  list: (query: TaxonomyListQuery) =>
     queryOptions({
       queryKey: taxonomyUnitKeys.list(query),
       queryFn: ({ signal }) => listTaxonomyUnits(query, signal),
