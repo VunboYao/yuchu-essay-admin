@@ -1,0 +1,14 @@
+.root {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.file {
+  display: none;
+}
+
+.urlInput {
+  width: 280px;
+}
