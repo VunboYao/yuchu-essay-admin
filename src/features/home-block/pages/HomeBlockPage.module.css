@@ -1,0 +1,24 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tableBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.iconPreview {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}

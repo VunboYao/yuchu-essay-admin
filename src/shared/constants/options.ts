@@ -73,14 +73,15 @@ export const VIEW_ACCESS_OPTIONS = [
 
 export type ViewAccess = (typeof VIEW_ACCESS_OPTIONS)[number]['value']
 
+export const NAV_TYPE_VALUES = ['navigateTo', 'switchTab', 'redirectTo', 'reLaunch'] as const
+export type NavType = (typeof NAV_TYPE_VALUES)[number]
+
 export const NAV_TYPE_OPTIONS = [
   { label: 'navigateTo（普通二级页，默认）', value: 'navigateTo' },
   { label: 'switchTab（Tab 页，path 须为 tabBar）', value: 'switchTab' },
   { label: 'redirectTo（关闭当前页打开）', value: 'redirectTo' },
   { label: 'reLaunch（关闭所有页打开）', value: 'reLaunch' },
-] as const satisfies ReadonlyArray<SelectOption<string>>
-
-export type NavType = (typeof NAV_TYPE_OPTIONS)[number]['value']
+] as const satisfies ReadonlyArray<SelectOption<NavType>>
 
 export const AD_TYPE_OPTIONS = [
   { label: 'Banner 横幅', value: 'banner' },

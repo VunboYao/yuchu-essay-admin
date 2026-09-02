@@ -85,6 +85,7 @@ export function OssUploadButton({
         ref={inputRef}
         className={styles.file}
         type="file"
+        style={{ display: 'none' }}
         accept={accept}
         onChange={onFileChange}
       />

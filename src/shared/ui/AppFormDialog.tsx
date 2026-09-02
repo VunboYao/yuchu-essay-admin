@@ -32,6 +32,7 @@ export default function AppFormDialog({
       }}
       closable={!confirmLoading}
       title={title}
+      keyboard={false}
       mask={{ closable: false }}
       confirmLoading={confirmLoading}
       destroyOnHidden
