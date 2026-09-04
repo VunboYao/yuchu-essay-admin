@@ -3,6 +3,7 @@ import { Outlet, useLocation, useMatches, useNavigate } from 'react-router'
 import { MENU_GROUPS } from '@/app/layouts/menu'
 import styles from './AdminLayout.module.css'
 import { useAuthStore } from '@/features/auth/auth-store'
+import { ThemeToggle } from '@/app/theme/ThemeToggle'
 
 const { Header, Sider, Content } = Layout
 
@@ -73,7 +74,10 @@ export default function AdminLayout() {
             <span className={styles.headerDate}>{today}</span>
           </div>
           <div className={styles.user}>
-            {username}[{role}]
+            <ThemeToggle />
+            <span className={styles.userInfo}>
+              {username}[{role}]
+            </span>
             <Popconfirm
               title="退出登录"
               description="确定要退出登录吗？"

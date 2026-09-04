@@ -7,6 +7,7 @@ import styles from './LoginPage.module.css'
 import { login } from '../api'
 import { useAuthStore, type AuthStore } from '../auth-store'
 import { ApiError } from '@/shared/api/api-error'
+import { ThemeToggle } from '@/app/theme/ThemeToggle'
 
 export function Component() {
   const { message } = App.useApp()
@@ -39,6 +40,9 @@ export function Component() {
   const loginTip = isProd ? '生产环境请使用已设置的管理员密码' : '开发环境默认账号 admin / admin123'
   return (
     <div className={styles.loginPage}>
+      <div className={styles.loginToolbar}>
+        <ThemeToggle />
+      </div>
       <div className={styles.loginPageTitle}>
         <h2>欢迎回来</h2>
         <p>登录以继续管理内容</p>

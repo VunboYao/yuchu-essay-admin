@@ -5,16 +5,29 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: var(--color-bg-layout);
+}
+
+.loginToolbar {
+  position: relative;
+  top: 20px;
+  right: 24px;
 }
 
 .loginPageTitle h2 {
   font-size: 24px;
   font-weight: bold;
   margin-bottom: 10px;
-  color: #333;
+  color: var(--color-text);
 }
 
 .loginPageTitle p {
   font-size: 16px;
-  color: #666;
+  color: var(--color-text-secondary);
+}
+
+.loginTip {
+  color: var(--color-text-secondary);
 }
