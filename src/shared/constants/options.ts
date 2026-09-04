@@ -87,8 +87,8 @@ export const AD_TYPE_OPTIONS = [
   { label: 'Banner 横幅', value: 'banner' },
   { label: '激励视频', value: 'rewarded_video' },
 ] as const satisfies ReadonlyArray<SelectOption<string>>
-
-export type AdType = (typeof AD_TYPE_OPTIONS)[number]['value']
+export const AD_TYPE_VALUES = ['banner', 'rewarded_video'] as const
+export type AdType = (typeof AD_TYPE_VALUES)[number]
 
 export const AD_PAGE_OPTIONS = [
   { label: '首页', value: 'home' },
@@ -98,8 +98,15 @@ export const AD_PAGE_OPTIONS = [
   { label: '我的', value: 'mine' },
   { label: '下载', value: 'download' },
 ] as const satisfies ReadonlyArray<SelectOption<string>>
-
-export type AdPage = (typeof AD_PAGE_OPTIONS)[number]['value']
+export const AD_PAGE_VALUES = [
+  'home',
+  'article_detail',
+  'essay_detail',
+  'search',
+  'mine',
+  'download',
+] as const
+export type AdPage = (typeof AD_PAGE_VALUES)[number]
 
 export const FREE_TAG = '免费'
 
