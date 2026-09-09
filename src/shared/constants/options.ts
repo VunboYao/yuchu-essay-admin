@@ -142,3 +142,11 @@ export type AdminOpLogTargetType = (typeof ADMIN_OPLOG_TARGET_TYPE_OPTIONS)[numb
 export function adminOpLogTargetTypeLabel(value: AdminOpLogTargetType): string {
   return labelOf(ADMIN_OPLOG_TARGET_TYPE_OPTIONS, value)
 }
+
+// 待处理/已回复
+export const FEEDBACK_STATUS_OPTIONS = [
+  { label: '待处理', value: 'pending' },
+  { label: '已回复', value: 'replied' },
+] as const satisfies ReadonlyArray<SelectOption<string>>
+export const FEEDBACK_STATUS_VALUES = ['pending', 'replied'] as const
+export type FeedbackStatus = (typeof FEEDBACK_STATUS_VALUES)[number]

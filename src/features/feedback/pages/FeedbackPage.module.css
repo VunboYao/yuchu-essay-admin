@@ -1,0 +1,38 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.keyword {
+  width: 240px;
+}
+
+.status {
+  width: 160px;
+}
+
+.tableBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preview {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--color-bg-subtle);
+  border-radius: 8px;
+}
+
+.previewLabel {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.previewContent {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: var(--color-text);
+}
