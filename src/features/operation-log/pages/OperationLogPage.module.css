@@ -1,0 +1,19 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.adminId {
+  width: 180px;
+}
+
+.targetType {
+  width: 180px;
+}
+
+.tableBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

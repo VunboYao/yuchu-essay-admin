@@ -17,6 +17,7 @@
 | 14 | [Step 7 教材分类引导式开发](./14-step7-taxonomy引导式开发.md) | Step 6 通过后，按检查点落地无删除变体 + 多离散筛选。同样逻辑指向 Tag 历史文件；主课是 zod / RHF / Query 分层。禁止 `useCrud`，默认不抽 list hook |
 | 15 | [Step 8 OSS 引导式开发](./15-step8-oss引导式开发.md) | Step 7 通过后（不依赖 taxonomy 源码），按检查点做 `shared/oss`。对照源为 STS / oss-setup-guide + 01，不读 `Admin/src`。禁止演示路由、禁止 STS 进 Query |
 | 16 | [Step 9 运营配置引导式开发](./16-step9-运营配置引导式开发.md) | Step 8 通过后，按检查点落地首页入口 / 广告位 / 公众号。对照源为后端 DTO + seed + 小程序消费，不读 `Admin/src`。主课是无分页数组列表与 upsert |
+| 17 | [Step 10 反馈日志引导式开发](./17-step10-反馈日志引导式开发.md) | Step 9 通过后，按检查点落地意见反馈（仅回复）与操作日志（只读）。对照源为后端 handler / DTO + 小程序消费，不读 `Admin/src`。主课是半写 vs 只读，不要为对称发明 CRUD |
 | — | [Zod 与 RHF](./learn-zod-rhf.md) | 通用说明：两库独立、职责、接线；不是契约 |
 | — | [Zod 与 Vitest](./learn-vitest-zod.md) | 对照本项目的学习笔记；不是契约 |
 | — | [前端项目格式化配置指南](./前端项目格式化配置指南.md) | 复制 Prettier、EditorConfig 与工作区配置时查阅 |
