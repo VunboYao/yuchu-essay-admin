@@ -25,6 +25,8 @@ export const SEMESTER_OPTIONS = [
   { label: '下册', value: '下册' },
 ] as const satisfies ReadonlyArray<SelectOption<string>>
 
+export const SEMESTER_VALUES = ['上册', '下册'] as const satisfies ReadonlyArray<Semester>
+
 export type Semester = (typeof SEMESTER_OPTIONS)[number]['value']
 
 export const GRADES = [1, 2, 3, 4, 5, 6] as const
@@ -47,7 +49,12 @@ export const CONTENT_TYPE_OPTIONS = [
   { label: '写作素材', value: 'material' },
   { label: '其他', value: 'other' },
 ] as const satisfies ReadonlyArray<SelectOption<string>>
-
+export const CONTENT_TYPE_VALUES = [
+  'unit_guide',
+  'unit_writing',
+  'material',
+  'other',
+] as const satisfies ReadonlyArray<ContentType>
 export type ContentType = (typeof CONTENT_TYPE_OPTIONS)[number]['value']
 
 export const ACCESS_TYPE_OPTIONS = [
@@ -72,6 +79,11 @@ export const VIEW_ACCESS_OPTIONS = [
 ] as const satisfies ReadonlyArray<SelectOption<string>>
 
 export type ViewAccess = (typeof VIEW_ACCESS_OPTIONS)[number]['value']
+export const VIEW_ACCESS_VALUES = [
+  'free',
+  'member_only',
+  'purchase_required',
+] as const satisfies ReadonlyArray<ViewAccess>
 
 export const NAV_TYPE_VALUES = ['navigateTo', 'switchTab', 'redirectTo', 'reLaunch'] as const
 export type NavType = (typeof NAV_TYPE_VALUES)[number]

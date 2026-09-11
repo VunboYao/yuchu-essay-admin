@@ -1,5 +1,7 @@
-import { Empty } from 'antd'
+import { useState } from 'react'
+import { BodyImageList, type BodyImageRow } from '../components/BodyImageList'
 
 export function Component() {
-  return <Empty description="暂无数据" />
+  const [bodyImages, setBodyImages] = useState<BodyImageRow[]>([])
+  return <BodyImageList value={bodyImages} onChange={setBodyImages} />
 }
