@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { Controller, type Control, type FieldErrors } from 'react-hook-form'
 import type { ArticleWriteInput, ArticleWriteOutput } from '../schemas'
-import { Form, Input, InputNumber, Select, Image, Space, Switch } from 'antd'
+import { App, Button, Divider, Form, Input, InputNumber, Select, Image, Space, Switch } from 'antd'
 import {
   GRADE_OPTIONS,
   UNIT_OPTIONS,
@@ -10,8 +11,12 @@ import {
 } from '@/shared/constants/options'
 import { OssUploadButton } from '@/shared/oss'
 import { BodyImageList } from './BodyImageList'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { createTag } from '@/features/tag/api'
 import { tagKeys, tagQueries } from '@/features/tag/queries'
+import { ApiError } from '@/shared/api'
+
+const tagDictQuery = tagQueries.list({ status: 1, page: 1, pageSize: 100 })
 
 export function ArticleForm({
   control,
@@ -20,16 +25,52 @@ export function ArticleForm({
   control: Control<ArticleWriteInput, unknown, ArticleWriteOutput>
   errors: FieldErrors<ArticleWriteInput>
 }) {
-  const tagListQuery = useQuery({
-    ...tagQueries.list({ status: 1, page: 1, pageSize: 100 }),
+  const { message } = App.useApp()
+  const queryClient = useQueryClient()
+  const [newTagName, setNewTagName] = useState('')
+  const tagListQuery = useQuery(tagDictQuery)
+  const tags = tagListQuery.data?.list ?? []
+  const name = newTagName.trim()
+
+  const createTagMutation = useMutation({
+    mutationFn: createTag,
+    onSettled: () => queryClient.invalidateQueries({ queryKey: tagKeys.all }),
   })
+
+  async function addTag(currentIds: number[], onChange: (ids: number[]) => void) {
+    if (!name || createTagMutation.isPending) return
+    const existing = tags.find((tag) => tag.name === name)
+    if (existing) {
+      onChange(currentIds.includes(existing.id) ? currentIds : [...currentIds, existing.id])
+      setNewTagName('')
+      return
+    }
+    try {
+      const created = await createTagMutation.mutateAsync({
+        name,
+        sortOrder: 0,
+        status: 1,
+      })
+      message.success(`已创建标签「${created.name}」`)
+      onChange(currentIds.includes(created.id) ? currentIds : [...currentIds, created.id])
+      setNewTagName('')
+    } catch (error) {
+      message.error(error instanceof ApiError ? error.message : '创建失败')
+      const found = queryClient
+        .getQueryData(tagDictQuery.queryKey)
+        ?.list.find((tag) => tag.name === name)
+      if (!found) return
+      onChange(currentIds.includes(found.id) ? currentIds : [...currentIds, found.id])
+      setNewTagName('')
+    }
+  }
 
   return (
     <Form
       layout="horizontal"
-      labelCol={{ span: 4 }}
-      wrapperCol={{ span: 14 }}
-      style={{ marginTop: 16 }}
+      labelCol={{ flex: '80px' }}
+      wrapperCol={{ flex: 1 }}
+      style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 16 }}
     >
       <Form.Item
         label="标题"
@@ -202,11 +243,35 @@ export function ArticleForm({
           name="tagIds"
           render={({ field }) => (
             <Select
-              options={[
-                ...(tagListQuery.data?.list.map((tag) => ({ label: tag.name, value: tag.id })) ||
-                  []),
-              ]}
               mode="multiple"
+              showSearch={{
+                optionFilterProp: 'label',
+              }}
+              placeholder="选择标签，或在下拉底部添加"
+              options={tags.map((tag) => ({ label: tag.name, value: tag.id }))}
+              popupRender={(menu) => (
+                <>
+                  {menu}
+                  <Divider style={{ margin: '8px 0' }} />
+                  <Space style={{ padding: '0 8px 4px' }}>
+                    <Input
+                      placeholder="新标签名"
+                      maxLength={80}
+                      value={newTagName}
+                      onChange={(event) => setNewTagName(event.target.value)}
+                      onKeyDown={(event) => event.stopPropagation()}
+                      onPressEnter={() => void addTag(field.value ?? [], field.onChange)}
+                    />
+                    <Button
+                      type="text"
+                      disabled={!name || createTagMutation.isPending}
+                      onClick={() => void addTag(field.value ?? [], field.onChange)}
+                    >
+                      添加
+                    </Button>
+                  </Space>
+                </>
+              )}
               {...field}
             />
           )}

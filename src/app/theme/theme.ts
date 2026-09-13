@@ -12,7 +12,7 @@ export function readStoredScheme() {
     const scheme: ColorScheme = raw === 'dark' ? 'dark' : 'light'
     applySchemeToDocument(scheme)
     return scheme
-  } catch (error) {
+  } catch {
     applySchemeToDocument('light')
     return 'light'
   }

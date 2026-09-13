@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query'
-import { listArticles, type ArticleListQuery } from './api'
+import { listArticles, getArticle, type ArticleListQuery } from './api'
 
 export const articleKeys = {
   all: ['articles'] as const,
@@ -9,10 +9,15 @@ export const articleKeys = {
   detail: (id: number) => [...articleKeys.details(), id] as const,
 }
 
-export const articleQuery = {
+export const articleQueries = {
   list: (query: ArticleListQuery) =>
     queryOptions({
       queryKey: articleKeys.list(query),
       queryFn: ({ signal }) => listArticles(query, signal),
+    }),
+  detail: (id: number) =>
+    queryOptions({
+      queryKey: articleKeys.detail(id),
+      queryFn: ({ signal }) => getArticle(id, signal),
     }),
 }
