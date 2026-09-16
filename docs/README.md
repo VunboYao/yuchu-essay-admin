@@ -19,6 +19,7 @@
 | 16 | [Step 9 运营配置引导式开发](./16-step9-运营配置引导式开发.md) | Step 8 通过后，按检查点落地首页入口 / 广告位 / 公众号。对照源为后端 DTO + seed + 小程序消费，不读 `Admin/src`。主课是无分页数组列表与 upsert |
 | 17 | [Step 10 反馈日志引导式开发](./17-step10-反馈日志引导式开发.md) | Step 9 通过后，按检查点落地意见反馈（仅回复）与操作日志（只读）。对照源为后端 handler / DTO + 小程序消费，不读 `Admin/src`。主课是半写 vs 只读，不要为对称发明 CRUD |
 | 18 | [Step 11 作文专题引导式开发](./18-step11-作文专题引导式开发.md) | Step 10 通过后，按检查点落地作文专题。对照源为后端 DTO / handler + 小程序详情，不读 `Admin/src`。主课是详情 GET、独立上下架、正文图稳定 id 拖拽、内联建标签 |
+| 19 | [Step 12 优秀作文引导式开发](./19-step12-优秀作文引导式开发.md) | Step 11 通过后，按检查点落地优秀作文。对照源为后端 DTO / htmlsanitize + 小程序详情，不读 `Admin/src`。主课是双 TipTap 与 RHF 受控边界、空 HTML 拦截、关联专题、可删除 |
 | — | [Zod 与 RHF](./learn-zod-rhf.md) | 通用说明：两库独立、职责、接线；不是契约 |
 | — | [Zod 与 Vitest](./learn-vitest-zod.md) | 对照本项目的学习笔记；不是契约 |
 | — | [前端项目格式化配置指南](./前端项目格式化配置指南.md) | 复制 Prettier、EditorConfig 与工作区配置时查阅 |
