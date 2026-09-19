@@ -61,5 +61,8 @@ export function updateArticle({
 }
 
 export function updateArticleStatus({ id, status }: { id: number; status: ArticlePublishStatus }) {
-  return put<void>(`/articles/${id}/status`, { status })
+  return put<{ id: number; status: ArticlePublishStatus; publishedAt: string | null }>(
+    `/articles/${id}/status`,
+    { status },
+  )
 }
