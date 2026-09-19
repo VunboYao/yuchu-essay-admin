@@ -1,0 +1,47 @@
+.root {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-fill-secondary, #fafafa);
+}
+
+.toolbar button {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.toolbar button[data-active='true'] {
+  background: var(--color-fill, #e6f4ff);
+  border-color: var(--color-border);
+}
+
+.surface :global(.ProseMirror) {
+  min-height: 160px;
+  padding: 12px;
+  outline: none;
+}
+
+.surface :global(.ProseMirror p.is-editor-empty:first-child::before) {
+  color: var(--color-text-secondary);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.surfaceLarge :global(.ProseMirror) {
+  min-height: 240px;
+}
