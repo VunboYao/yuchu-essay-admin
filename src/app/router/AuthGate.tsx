@@ -23,6 +23,7 @@ export function AuthGate() {
   const location = useLocation()
   const token = useAuthStore((state) => state.token)
   const skipRedirect = useAuthStore((state) => state.skipRedirect)
+  const isQiankun = Boolean(window.__POWERED_BY_QIANKUN__)
 
   // 落到 /login 后再清标记，避免 render 里 setState / StrictMode 提前消费
   useEffect(() => {
@@ -30,6 +31,14 @@ export function AuthGate() {
       useAuthStore.setState({ skipRedirect: false })
     }
   }, [location.pathname, skipRedirect])
+
+  if (isQiankun) {
+    if (location.pathname === '/login') {
+      return token ? <Navigate replace to={parseRedirectUrl(location.search)} /> : null
+    }
+    if (!token) return null
+    return <Outlet />
+  }
 
   // 已登录停在 /login：跟登录成功后的 setAuth 重渲染是同一条分支，必须吃 redirect
   if (token && location.pathname === '/login') {

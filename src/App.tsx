@@ -2,6 +2,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { Outlet } from 'react-router'
 import { Spin } from 'antd'
 import { getQkActions } from '@/shared/qk-actions'
+import { useAuthStore } from '@/features/auth/auth-store'
 
 export function RouteFallback() {
   return <Spin fullscreen />
@@ -27,6 +28,10 @@ export default function App() {
     if (!actions) return
     actions.onGlobalStateChange((state) => {
       if (state.theme === 'light' || state.theme === 'dark') setTheme(state.theme)
+      useAuthStore.setState({
+        token: state.token,
+        adminInfo: state.adminInfo,
+      })
     }, true)
     return () => {
       actions.offGlobalStateChange()

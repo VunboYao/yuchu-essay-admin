@@ -45,7 +45,9 @@ export default function AdminLayout() {
 
   const onLogout = () => {
     logout({ skipRedirect: true })
-    message.success('退出登录成功')
+    if (!window.__POWERED_BY_QIANKUN__) {
+      message.success('退出登录成功')
+    }
   }
 
   return (

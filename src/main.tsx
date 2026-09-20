@@ -7,6 +7,7 @@ import '@/shared/config/env'
 import { AppProviders } from '@/app/providers/AppProviders'
 import router from '@/app/router'
 import { getQkActions, setQkActions, type GlobalState } from '@/shared/qk-actions'
+import { useAuthStore } from '@/features/auth/auth-store'
 
 let root: Root | undefined
 
@@ -49,6 +50,13 @@ export async function mount(props: QiankunProps) {
       getGlobalState:
         props.getGlobalState ??
         (() => ({ token: null, adminInfo: null, theme: props.theme ?? 'light' })),
+    })
+  }
+  const snapshot = getQkActions()?.getGlobalState()
+  if (snapshot) {
+    useAuthStore.setState({
+      token: snapshot.token,
+      adminInfo: snapshot.adminInfo,
     })
   }
   render(props.container)
