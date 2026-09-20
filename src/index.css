@@ -5,3 +5,16 @@ body,
   margin: 0;
   background: var(--color-bg-layout);
 }
+
+.qk-teach-jump {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 9999;
+  padding: 8px 12px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
