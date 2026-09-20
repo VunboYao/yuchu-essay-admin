@@ -35,6 +35,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@qiankunjs/bundler-plugin": "0.0.1-rc.2",
     "@tanstack/react-query-devtools": "^5.101.4",
     "@types/ali-oss": "^6.23.3",
     "@types/node": "^24.13.3",
