@@ -36,6 +36,8 @@ export async function uploadObject(
     url: publicUrl(cred, objectKey),
     objectKey,
     fileName: file.name,
+    fileType: fileExt(file.name).slice(1),
+    fileSize: file.size,
   }
 }
 

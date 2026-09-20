@@ -74,7 +74,7 @@ export function OssUploadButton({
   function confirmFallback() {
     const url = draft.trim()
     if (!url || uploading) return
-    onSuccess({ url, objectKey: url, fileName: url })
+    onSuccess({ url, objectKey: url, fileName: url, fileType: '', fileSize: 0 })
     setDraft('')
     setFallbackOpen(false)
   }
