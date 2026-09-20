@@ -6,11 +6,17 @@ body,
   background: var(--color-bg-layout);
 }
 
-.qk-teach-jump {
+.qk-teach {
   position: fixed;
   right: 16px;
   bottom: 16px;
   z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qk-teach-btn {
   padding: 8px 12px;
   border: 1px solid #d0d7de;
   border-radius: 6px;

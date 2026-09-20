@@ -1,6 +1,7 @@
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Outlet } from 'react-router'
 import { Spin } from 'antd'
+import { getQkActions } from '@/shared/qk-actions'
 
 export function RouteFallback() {
   return <Spin fullscreen />
@@ -12,14 +13,41 @@ function goVueArticles() {
   history.pushState(history.state, '', '/vue/articles')
 }
 
+function readTheme() {
+  const theme = getQkActions()?.getGlobalState().theme
+  return theme === 'dark' ? 'dark' : 'light'
+}
+
 export default function App() {
   const isQiankun = Boolean(window.__POWERED_BY_QIANKUN__)
+  const [theme, setTheme] = useState(readTheme)
+
+  useEffect(() => {
+    const actions = getQkActions()
+    if (!actions) return
+    actions.onGlobalStateChange((state) => {
+      if (state.theme === 'light' || state.theme === 'dark') setTheme(state.theme)
+    }, true)
+    return () => {
+      actions.offGlobalStateChange()
+    }
+  }, [])
+
+  function toggleTheme() {
+    getQkActions()?.setGlobalState({ theme: theme === 'light' ? 'dark' : 'light' })
+  }
+
   return (
     <Suspense fallback={<RouteFallback />}>
       {isQiankun ? (
-        <button type="button" className="qk-teach-jump" onClick={goVueArticles}>
-          去 Vue 文章
-        </button>
+        <div className="qk-teach">
+          <button type="button" className="qk-teach-btn" onClick={toggleTheme}>
+            主题：{theme}
+          </button>
+          <button type="button" className="qk-teach-btn" onClick={goVueArticles}>
+            去 Vue 文章
+          </button>
+        </div>
       ) : null}
       <Outlet />
     </Suspense>
