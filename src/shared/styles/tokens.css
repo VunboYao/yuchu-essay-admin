@@ -1,5 +1,6 @@
 :root,
-[data-theme='light'] {
+html[data-theme='light'],
+#root[data-theme='light'] {
   --color-bg-layout: #f5f5f5;
   --color-bg-container: #fff;
   --color-bg-subtle: #f7f8fa;
@@ -9,7 +10,8 @@
   --color-border: rgba(0, 0, 0, 0.06);
 }
 
-[data-theme='dark'] {
+html[data-theme='dark'],
+#root[data-theme='dark'] {
   --color-bg-layout: #141414;
   --color-bg-container: #1f1f1f;
   --color-bg-subtle: #262626;

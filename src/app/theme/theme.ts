@@ -3,7 +3,12 @@ export const COLOR_SCHEME_KEY = 'admin_color_scheme'
 export type ColorScheme = 'light' | 'dark'
 
 export function applySchemeToDocument(scheme: ColorScheme) {
-  document.documentElement.dataset.theme = scheme
+  const root = document.getElementById('root')
+  if (root) root.dataset.theme = scheme
+  // 微前端时 html 是基座的；token 只挂 #root，避免和基座 .layout[data-theme] 抢变量
+  if (!window.__POWERED_BY_QIANKUN__) {
+    document.documentElement.dataset.theme = scheme
+  }
 }
 
 export function readStoredScheme() {
