@@ -1,8 +1,8 @@
-# course-admin-react · React 后台管理端
+> **原始中文 README（从私有 monorepo 带出，保留作参考）**
+> 其中的 `Admin/`（Vue 版后台）、`prd/005` 等相对路径不在本仓库。
+> 英文说明见 [README.md](./README.md)；`docs/` 目录仍是中文。
 
-> **这是从私有 monorepo 里带出来的原始中文 README。**
-> 里面的 `../Admin/`（Vue 版后台）、`../prd/005` 等相对路径指向**不在本仓库**的目录。
-> 当前可用的说明看英文版 [README.md](./README.md)；`docs/` 目录仍是中文。
+# course-admin-react · React 后台管理端
 
 用 **Vite + React 19 + TypeScript + Ant Design** 复刻 [`Admin/`](../Admin/)（Vue 3）的业务能力，对接同一套 `course_server` `/admin/api/v1`。
 
