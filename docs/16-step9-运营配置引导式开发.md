@@ -4,7 +4,7 @@
 > 它是一份任务引导，不提供可以整段复制的最终页面。请先自己完成每个检查点，卡住后再展开提示。  
 > 质量要求以 [01-工程契约](./01-工程契约.md) 为准。
 
-本步 **没有** 测试检查点。Vitest 仍延后到 Step 16。验收以「手动验证矩阵」+ `pnpm verify`（lint + type-check）为准。
+本步 **没有** 测试检查点。测试策略已于 2026-10-11 改为随域交付（见 [04-验收记录](./04-验收记录.md)）。验收以「手动验证矩阵」+ `pnpm verify` 为准。
 
 Step 6 / 7 已经把「筛选 + Table + Dialog + mutation」跑通。Step 8 已经有 `OssUploadButton`。本步 **不再重讲** `useQuery` / `invalidateQueries` / `Controller` / STS。同样逻辑打开历史文件；本文只写运营三页的增量：**无分页数组列表、CRUD vs Upsert、OSS 第一次进表单、跨字段校验**。
 

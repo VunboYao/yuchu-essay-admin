@@ -4,11 +4,11 @@
 > 它是一份任务引导，不提供可以整段复制的最终实现。请先自己完成每个检查点，卡住后再展开提示。  
 > 质量要求以 [01-工程契约](./01-工程契约.md) 为准。
 
-## 测试暂缓（2026-08-23）
+## 测试策略（2026-10-11 修订）
 
-本步 **跳过** 检查点 0（测试基线）和检查点 7（路由行为测试）。  
-Vitest / RTL 延后到全部业务开发完成后统一接入（见 [03-开发计划](./03-开发计划.md) Step 16）。  
-原文保留，供以后接入时对照。本步从 **检查点 1** 开始；验收以「手动验证矩阵」+ `pnpm verify`（lint + type-check）为准。
+检查点 0（测试基线）和检查点 7（路由行为测试）已于 2026-10-11 补齐（见 [04-验收记录](./04-验收记录.md)）。  
+Vitest / RTL 已接入，本步不再跳过测试。  
+原文保留，供对照。验收以「手动验证矩阵」+ `pnpm verify` 为准。
 
 ## 1. 本步目标
 
@@ -40,7 +40,7 @@ Vitest / RTL 延后到全部业务开发完成后统一接入（见 [03-开发�
 - 持久化 key 为 `admin_token`，组件中不散落 `localStorage.setItem`。
 - 登录表单只使用 Zod + RHF 管状态和校验。
 - 提交期间按钮不可重复触发。
-- `pnpm verify` 通过（lint + type-check；本步不要求 Vitest）。
+- `pnpm verify` 通过（lint + type-check + test）。
 
 ## 2. 本步边界
 
@@ -92,7 +92,7 @@ src/
 │       │   └── LoginPage.module.css
 ```
 
-本步 **不要** 安装测试依赖，也不要改 `package.json` 的 `verify` / `vite.config.ts` 的 test 配置。`__tests__/` 与 `src/test/setup.ts` 延后到 Step 16。
+本步 **不要** 安装测试依赖，也不要改 `package.json` 的 `verify` / `vite.config.ts` 的 test 配置。（此限制已失效：测试基础设施于 2026-10-11 接入，见 [04-验收记录](./04-验收记录.md)。）
 
 文件名可以小幅调整，但业务代码必须留在 `features/auth`，路由守卫必须留在应用壳 `app/router`。
 
@@ -756,7 +756,7 @@ pnpm build
 - Oxlint 通过。
 - TypeScript 严格检查通过。
 - Vite 生产构建完成。
-- （Vitest 延后到 Step 16，本步不要求 `pnpm test`。）
+- （Vitest 已补齐：`test/auth-gate.test.tsx`，8 条。）
 
 ### 手动验证矩阵
 
@@ -886,7 +886,7 @@ pnpm build
 
 ### 按需了解
 
-- Testing Library：从用户行为验证路由守卫（Step 16 统一接入，本步用手动矩阵代替）。
+- Testing Library：从用户行为验证路由守卫（已由 `test/auth-gate.test.tsx` 覆盖）。
 
 - Zustand `migrate`：持久化结构上线并发生版本变化时再用。
 - Zustand `useShallow`：一次选择多个值且确实返回新对象时再用。

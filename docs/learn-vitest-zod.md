@@ -3,7 +3,7 @@
 > 不是通用教程。只覆盖 `Admin-React/` 会用到的部分。  
 > Zod 与 RHF **是否独立、完整 API 与非表单用法**见 [learn-zod-rhf.md](./learn-zod-rhf.md)。  
 > 对照你已有的：**TypeScript 类型、Vue Element `FormRules`、Go `json.Unmarshal` / `go test`**。  
-> 当前仓库：Zod 已用于 env；Vitest 暂缓至 Step 16（全部业务完成后再统一接入）。本文可先读，不必现在配测试。
+> 当前仓库：Zod 已用于 env；Vitest 已于 2026-10-11 接入（`pnpm test`，19 条）。本文是概念参考，实际配置见 `vitest.config.ts`。
 
 冲突时以 [01 工程契约](./01-工程契约.md) 为准。
 
@@ -14,7 +14,7 @@
 | | Zod | Vitest |
 |--|-----|--------|
 | 干什么 | **运行时**校验未知数据，并推出 TS 类型 | **跑测试**（Vite 原生，API 很像 Jest） |
-| 本项目用在哪 | env、登录/CRUD 表单 schema | Step 16 统一接入后的 `pnpm test` |
+| 本项目用在哪 | env、登录/CRUD 表单 schema | `pnpm test`（已接入） |
 | 不是什么 | 不是 `shared/types` 的替代品 | 不是覆盖率工具；不测 store 内部字段名 |
 
 一句话：
@@ -182,7 +182,7 @@ Testing Library（RTL）测的是 **用户能看见/点到的行为**，不测 `
 | Step 6+ | 每个写表单 schema：合法通过 / 非法拒绝 | 不测「Ant 弹窗开没开」的实现细节 |
 | Step 6 | `queryKey` 工厂含 keyword / page / pageSize | 不打真网络 |
 
-Vitest 暂缓期间：`pnpm verify` = lint + type-check。Step 16 接入后再变回 `lint && type-check && test`。
+当前：`pnpm verify` = `lint && type-check && test`（2026-10-11 起）。
 
 ### 2.3 Step 1 smoke 会长这样（认形状即可）
 

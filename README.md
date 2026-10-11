@@ -19,5 +19,5 @@
 
 - Vue 版 `Admin/` 不要改；只对路由 / API 字段 / 业务规则。
 - 开发端口 **5174**；账号 `admin / admin123`（需先启动 `course_server`）。
-- 质量门：`pnpm verify`（lint + type-check）红灯 = 该 Step 未完成。**Vitest 暂缓**：先学业务实现；全部功能开发完成后再统一接入测试。
+- 质量门：`pnpm verify`（lint + type-check + test）红灯 = 该 Step 未完成。测试**随域交付**：新增或改动一域时同时补该域用例。
 - 代码落在 `src/app/` `src/shared/` `src/features/<域>/`。

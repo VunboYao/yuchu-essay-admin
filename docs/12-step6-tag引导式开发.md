@@ -370,7 +370,7 @@ Devtools 中，改关键字或翻页会出现不同的 `['tags','list',{...}]`�
 
 ### 当前问题
 
-08 把 schema 写在 `CreateTagForm` 里，英文错误文案，且没有独立文件。03 要求本步产出 `schemas.ts`（单测延后到 Step 16，但文件本步就要有）。
+08 把 schema 写在 `CreateTagForm` 里，英文错误文案，且没有独立文件。03 要求本步产出 `schemas.ts`（单测留 Step 16，但文件本步就要有）。
 
 ### 任务
 
